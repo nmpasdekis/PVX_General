@@ -6,7 +6,7 @@
 #pragma comment(lib, "User32.lib")
 #include<fstream>
 #include<PVX_Encode.h>
-#include<PVX_StdString.h>
+#include<PVX_String.h>
 #include<PVX_Regex.h>
 #include<mutex>
 
