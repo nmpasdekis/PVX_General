@@ -7,6 +7,7 @@
 #include <vector>
 #include <initializer_list>
 #include <functional>
+#include <PVX_String.h>
 
 namespace PVX {
 	namespace JSON {
@@ -51,16 +52,12 @@ namespace PVX {
 
 			template<typename T>
 			inline Item(const std::map<std::wstring, T> & Dictionary) : Type{ JSON::jsElementType::Object } {
-				for (auto & d : Dictionary) Object[d.first] = (JSON::Item)d.second;
+				for (auto& [n, v] : Dictionary) Object[n] = (JSON::Item)v;
 			}
 
 			template<typename T>
 			inline Item(const std::map<std::string, T> & Dictionary) : Type{ JSON::jsElementType::Object } {
-				for (auto & d : Dictionary) {
-					std::wstring Name; Name.resize(d.first.size());
-					memcpy(&Name[0], &d.first[0], d.first.size());
-					Object[Name] = (JSON::Item)d.second;
-				}
+				for (auto& [n, v] : Dictionary) Object[PVX::String::ToString(n)] = (JSON::Item)v;
 			}
 
 			template<typename T>
