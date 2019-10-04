@@ -75,8 +75,8 @@ namespace PVX::XML {
 	const std::wregex   rCDATA(LR"regex(\s*<!-->)regex", std::regex_constants::optimize);
 	const std::wregex  attribs(LR"regex(([a-zA-Z][-a-zA-Z0-9]*)\s*(=\s*"\s)?)regex", std::regex_constants::optimize);
 
-	Element Element::Parse(const std::wstring& Text) {
-		int Error = 0;
+
+	static std::vector<Element> Tokenize(const std::wstring& Text, int& Error) {
 		std::wstring txt = RemoveComments(Text, Error);
 		removeHead(txt, Error);
 		auto CDATA = RemoveCDATA(txt, Error);
@@ -93,29 +93,20 @@ namespace PVX::XML {
 		while (cur < txt.size()) {
 			if (std::regex_search(txt.cbegin()+cur, txt.cend(), match, openTag, std::regex_constants::match_continuous)) {
 				std::map<std::wstring, std::wstring> attrs;
-				if (match.size()>3) {
-					PVX::onMatch(match[3].str(), attribs, [&](const std::wsmatch& m) { attrs[m[1]] = m.size()>2? Strings[NextString++]:L""; });
-				}
+				if (match.size()>3) PVX::onMatch(match[3].str(), attribs, [&](const std::wsmatch& m) { attrs[m[1]] = m.size()>2 ? Strings[NextString++] : L""; });
 
 				tags.push_back({ PVX::XML::Element::ElementType::OpenTag, match[1].str(), attrs });
 				cur += match.str().size();
 			} else if (std::regex_search(txt.cbegin()+cur, txt.cend(), match, fullTag, std::regex_constants::match_continuous)) {
 				std::map<std::wstring, std::wstring> attrs;
-				if (match.size()>3) {
-					PVX::onMatch(match[3].str(), attribs, [&](const std::wsmatch& m) {
-						if (m.size()>2)
-							attrs[m[1]] = Strings[NextString++];
-						else
-							attrs[m[1]] = L"";
-					});
-				}
+				if (match.size()>3) PVX::onMatch(match[3].str(), attribs, [&](const std::wsmatch& m) { attrs[m[1]] = m.size()>2 ? Strings[NextString++] : L""; });
 
 				tags.push_back({ PVX::XML::Element::ElementType::Tag, match[1].str(), attrs });
 				cur += match.str().size();
 			} else if (std::regex_search(txt.cbegin()+cur, txt.cend(), match, closeTag, std::regex_constants::match_continuous)) {
 				tags.push_back({ PVX::XML::Element::ElementType::CloseTag, match[1].str() });
 				cur += match.str().size();
-			} else if(std::regex_search(txt.cbegin()+cur, txt.cend(), match, rCDATA, std::regex_constants::match_continuous)){
+			} else if (std::regex_search(txt.cbegin()+cur, txt.cend(), match, rCDATA, std::regex_constants::match_continuous)) {
 				tags.push_back({ PVX::XML::Element::ElementType::CDATA, CDATA[NextCDATA++] });
 				cur += match.str().size();
 			} else {
@@ -125,7 +116,34 @@ namespace PVX::XML {
 				cur = end;
 			}
 		}
+		return tags;
+	}
 
+	Element Element::Parse(const std::wstring& Text) {
+		int Error = 0;
+		auto Tokens = Tokenize(Text, Error);
+		if (!Error && Tokens.size() && (Tokens[0].Type == ElementType::Tag || Tokens[0].Type == ElementType::OpenTag)) {
+			std::vector<Element> Stack;
+			Stack.push_back(Tokens[0]);
+
+			for (auto i = 1; i<Tokens.size() && Stack.size(); i++) {
+				auto& cur = Tokens[i];
+				if (!(cur.Type == ElementType::OpenTag || cur.Type == ElementType::CloseTag)) {
+					Stack.back().Child.push_back(cur);
+				} else if (cur.Type==ElementType::OpenTag) {
+					//Stack.back().Child.push_back(cur);
+					Stack.push_back(cur);
+				} else if (cur.Type==ElementType::CloseTag && cur.Name==Stack.back().Name) {
+					if (Stack.size()==1)
+						return Stack[0];
+					auto bk = Stack.back();
+					Stack.pop_back();
+					Stack.back().Child.push_back(bk);
+				} else {
+					return Element();
+				}
+			}
+		}
 		return Element();
 	}
 }
