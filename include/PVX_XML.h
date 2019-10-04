@@ -11,8 +11,10 @@ namespace PVX::XML {
 		};
 		ElementType Type;
 		std::wstring Name;
+		std::wstring Text;
 		std::map<std::wstring, std::wstring> Attributes;
 		std::vector<Element> Child;
-		static Element Parse(const std::wstring& Text);
 	};
+	Element Parse(const std::wstring& Text);
+	std::wstring Serialize(const Element& xml);
 }
