@@ -84,6 +84,7 @@
     <ClCompile Include="src\PVX_SHA1.cpp" />
     <ClCompile Include="src\PVX_String.cpp" />
     <ClCompile Include="src\PVX_Threading.cpp" />
+    <ClCompile Include="src\PVX_XML.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="include\PVX.inl" />
@@ -96,6 +97,7 @@
     <ClInclude Include="include\PVX_Regex.h" />
     <ClInclude Include="include\PVX_String.h" />
     <ClInclude Include="include\PVX_Threading.h" />
+    <ClInclude Include="include\PVX_XML.h" />
     <ClInclude Include="include\zconf.h" />
     <ClInclude Include="include\zlib.h" />
     <ClInclude Include="include\zutil.h" />

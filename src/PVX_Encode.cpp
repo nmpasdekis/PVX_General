@@ -698,6 +698,7 @@ namespace PVX {
 			return UTF(utf, sz);
 		}
 		wstring UTF(const unsigned char * Utf, int sz) {
+			if (!sz)return L"";
 			unsigned char* utf = (unsigned char*)Utf;
 			if (utf[0] == 0xef && utf[1] == 0xbb && utf[2] == 0xbf) {
 				sz -= 3;

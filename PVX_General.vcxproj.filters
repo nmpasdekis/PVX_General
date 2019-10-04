@@ -36,6 +36,9 @@
     <ClCompile Include="src\PVX_Threading.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\PVX_XML.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\PVX.inl">
@@ -71,6 +74,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\PVX_String.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\PVX_XML.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

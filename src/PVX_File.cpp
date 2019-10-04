@@ -116,8 +116,10 @@ namespace PVX {
 			if(_wfopen_s(&file, Filename, L"rb"))return ret;
 			fseek(file, 0, SEEK_END);
 			ret.resize(ftell(file));
-			fseek(file, 0, SEEK_SET);
-			fread(&ret[0], 1, ret.size(), file);
+			if (ret.size()) {
+				fseek(file, 0, SEEK_SET);
+				fread(&ret[0], 1, ret.size(), file);
+			}
 			fclose(file);
 			return ret;
 		}
@@ -681,8 +683,7 @@ namespace PVX {
 		void ChangeEventer::Track(const std::wstring & Filename, std::function<void()> clb) {
 			std::unique_lock<std::mutex> lock{ Locker };
 			Files.push_back({ Filename, clb });
-			(bool)Files.back().File;
-			clb();
+			if((bool)Files.back().File)	clb();
 		}
 	}
 }
