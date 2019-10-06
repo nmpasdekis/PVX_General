@@ -107,6 +107,9 @@ namespace PVX {
 		size_t FileSize(const std::string & filename);
 		size_t FileSize(const std::wstring & filename);
 
+		std::string FileFullPath(const std::string& Filename);
+		std::string GetFullPath(const std::string& Filename);
+
 		int Write(const std::string & fn, const void*data, size_t Size);
 		int Write(const std::string & fn, const std::vector<unsigned char> & Data);
 

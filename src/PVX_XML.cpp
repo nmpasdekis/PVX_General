@@ -3,6 +3,8 @@
 #include <PVX_Regex.h>
 #include <PVX_Encode.h>
 #include <sstream>
+#include <set>
+#include <PVX_json.h>
 
 namespace PVX::XML {
 	std::vector<std::wstring> RemoveStrings(std::wstring& txt) {
@@ -69,7 +71,7 @@ namespace PVX::XML {
 
 	//const std::wregex jsonSpaces(LR"regex(\s+)regex", std::regex_constants::optimize);
 	//const std::wregex jsonObjectStrings(LR"regex(\"((\\\"|[^\"])*)\")regex", std::regex_constants::optimize);
-	
+
 	const std::wregex  openTag(LR"regex(\s*<([a-zA-Z][-a-zA-Z0-9]*)(\s+([^>/]*))?>)regex", std::regex_constants::optimize);
 	const std::wregex  fullTag(LR"regex(\s*<([a-zA-Z][-a-zA-Z0-9]*)(\s+([^>]*))?/>)regex", std::regex_constants::optimize);
 	const std::wregex closeTag(LR"regex(\s*</([a-zA-Z][-a-zA-Z0-9]*)\s*>)regex", std::regex_constants::optimize);
@@ -120,15 +122,32 @@ namespace PVX::XML {
 		return tags;
 	}
 
-	Element Parse(const std::wstring& Text) {
+	Element Parse(const std::wstring& Text, bool IsHtml) {
 		int Error = 0;
 		auto Tokens = Tokenize(Text, Error);
+
+		if (IsHtml) {
+			std::set<std::wstring> singles{ L"img" };
+			size_t i = 1;
+			for (auto& t : Tokens) {
+				if (t.Name==L"br") t.Type = Element::ElementType::Tag;
+				else if (singles.count(t.Name)) {
+					if (t.Type==Element::ElementType::OpenTag && i<Tokens.size() && Tokens[i].Type==Element::ElementType::CloseTag&&Tokens[i].Name==t.Name) {
+						Tokens[i].Type = Element::ElementType::Discard;
+					}
+					t.Type = Element::ElementType::HtmlSingle;
+				}
+				i++;
+			}
+		}
+
 		if (!Error && Tokens.size() && (Tokens[0].Type == Element::ElementType::Tag || Tokens[0].Type == Element::ElementType::OpenTag)) {
 			std::vector<Element> Stack;
 			Stack.push_back(Tokens[0]);
 
 			for (auto i = 1; i<Tokens.size() && Stack.size(); i++) {
 				auto& cur = Tokens[i];
+				if (cur.Type==Element::ElementType::Discard)continue;
 				if (!(cur.Type == Element::ElementType::OpenTag || cur.Type == Element::ElementType::CloseTag)) {
 					Stack.back().Child.push_back(cur);
 				} else if (cur.Type==Element::ElementType::OpenTag) {
@@ -156,7 +175,6 @@ namespace PVX::XML {
 				out << xml.Text;
 				break;
 			case PVX::XML::Element::ElementType::Tag:
-				
 				out << L"\n" << std::wstring(level<<1, L' ') << L"<" << xml.Text;
 				for (auto& [Name, Value] : xml.Attributes)
 					out << L" " << Name << L"=\"" << Value << L"\"";
@@ -176,11 +194,78 @@ namespace PVX::XML {
 				}
 				out << L"</" << xml.Text << L">";
 				break;
+			case PVX::XML::Element::ElementType::HtmlSingle:
+				out << L"\n" << std::wstring(level<<1, L' ') << L"<" << xml.Text;
+				for (auto& [Name, Value] : xml.Attributes)
+					out << L" " << Name << L"=\"" << Value << L"\"";
+				out << L">";
+				break;
 		}
 	}
 	std::wstring Serialize(const Element& xml) {
 		std::wstringstream out;
 		_Print(xml, 0, out);
 		return out.str();
+	}
+	static const std::array<std::wstring, 7> JsonType{
+		L"Tag", L"Text", L"CDATA", L"HtmlSingle", L"OpenTag", L"CloseTag", L"Discard"
+	};
+	PVX::JSON::Item ToJson(const Element& xml) {
+		PVX::JSON::Item ret = PVX::JSON::jsElementType::Object;
+		ret[L"Type"] = JsonType[(int)xml.Type];
+		switch (xml.Type) {
+			case Element::ElementType::Tag:
+			case Element::ElementType::OpenTag:
+			case Element::ElementType::HtmlSingle: {
+				ret[L"Name"] = xml.Text;
+				if (xml.Attributes.size())
+					ret[L"Attributes"] = xml.Attributes;
+				if (xml.Child.size()) {
+					auto& Children = ret["Children"];
+					Children = PVX::JSON::jsElementType::Array;
+					for (auto& x: xml.Child) Children.push(ToJson(x));
+				}
+				break;
+			}
+			case Element::ElementType::Text:
+			case Element::ElementType::CDATA:
+				ret[L"Value"] = xml.Text;
+				break;
+		}
+		return ret;
+	}
+	static const std::map<std::wstring, Element::ElementType> FromJsonType{
+		{ L"Tag", Element::ElementType::Tag },
+		{ L"Text", Element::ElementType::Text },
+		{ L"CDATA", Element::ElementType::CDATA },
+		{ L"HtmlSingle", Element::ElementType::HtmlSingle },
+		{ L"OpenTag", Element::ElementType::OpenTag },
+		{ L"CloseTag", Element::ElementType::CloseTag },
+		{ L"Discard", Element::ElementType::Discard }
+	};
+	Element::ElementType GetType(const PVX::JSON::Item& xml) {
+		const PVX::JSON::Item def = L"Discard";
+		return FromJsonType.at(xml.Get(L"Type", def).GetString());
+	}
+	Element FromJson(const PVX::JSON::Item& xml) {
+		Element ret;
+		ret.Type = GetType(xml);
+		if (auto &Value = *xml.Has(L"Value"); &Value) {
+			ret.Text = Value.GetString();
+		} else {
+			ret.Text = xml.Get(L"Name").GetString();
+			ret.Name = PVX::String::ToLower(ret.Text);
+			if (auto &Attributes = *xml.Has(L"Attributes"); &Attributes) {
+				Attributes.eachInObject([&](auto Name, auto Value) {
+					ret.Attributes[Name] = Value.GetString();
+				});
+			}
+			if (auto &Children = *xml.Has(L"Children"); &Children) {
+				Children.each([&](auto Child) {
+					ret.Child.push_back(FromJson(Child));
+				});
+			}
+		}
+		return ret;
 	}
 }

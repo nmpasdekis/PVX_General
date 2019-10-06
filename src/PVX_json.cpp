@@ -397,7 +397,7 @@ namespace PVX {
 			return PVX::Decode::Base64(String);
 		}
 
-		std::wstring Item::GetString() {
+		std::wstring Item::GetString() const {
 			if (Type== jsElementType::String)
 				 return String;
 			return stringify(*this);
@@ -434,13 +434,24 @@ namespace PVX {
 		void Item::each(std::function<void(Item&)> Func) {
 			if (Type == JSON::jsElementType::Array) for (auto & i : Array) Func(i);
 		}
+		void Item::each(std::function<void(const Item&)> Func) const {
+			if (Type == JSON::jsElementType::Array) for (auto& i : Array) Func(i);
+		}
 		void Item::each2(std::function<void(Item&, int Index)> Func) {
+			int Index = 0;
+			if (Type == JSON::jsElementType::Array) for (auto& i : Array) Func(i, Index++);
+		}
+		void Item::each2(std::function<void(const Item&, int Index)> Func) const {
 			int Index = 0;
 			if (Type == JSON::jsElementType::Array) for (auto& i : Array) Func(i, Index++);
 		}
 		void Item::eachInObject(std::function<void(const std::wstring& Name, Item&)> Func) {
 			if (Type!=jsElementType::Object)return;
 			for (auto& [Name, Value] : Object) Func(Name, Value);
+		}
+		void Item::eachInObject(std::function<void(const std::wstring& Name, const Item&)> Func) const {
+			if (Type!=jsElementType::Object)return;
+			for (const auto& [Name, Value] : Object) Func(Name, Value);
 		}
 		Item Item::GroupBy(std::function<std::wstring(const Item&)> Func) {
 			if (Type!=jsElementType::Array) return jsElementType::Undefined;

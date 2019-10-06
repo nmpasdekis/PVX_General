@@ -108,7 +108,7 @@ namespace PVX {
 
 			double NumberSafeDouble();
 			long long NumberSafeInteger();
-			std::wstring GetString();
+			std::wstring GetString() const;
 
 			long long & Integer() { return _Integer; };
 			bool Boolean() { return !!_Integer; };
@@ -122,8 +122,11 @@ namespace PVX {
 			Item map(std::function<Item(const Item&)> Convert);
 			Item map2(std::function<Item(const Item&, int Index)> Convert);
 			void each(std::function<void(Item&)> Func);
+			void each(std::function<void(const Item&)> Func) const;
 			void each2(std::function<void(Item&, int Index)> Func);
+			void each2(std::function<void(const Item&, int Index)> Func) const;
 			void eachInObject(std::function<void(const std::wstring& Name, Item&)> Func);
+			void eachInObject(std::function<void(const std::wstring& Name, const Item&)> Func) const;
 			Item GroupBy(std::function<std::wstring(const Item&)> Func);
 			Item filter(std::function<int(const Item&)> Test);
 			Item find(std::function<int(const Item&)> Test, size_t Start=0);

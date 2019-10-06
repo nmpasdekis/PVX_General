@@ -120,8 +120,20 @@ namespace PVX {
 	//	return ret;
 	//}
 
+	template<typename T>
+	inline auto nMap(size_t Count, T fnc, const size_t Base = 0);
+	template<typename T>
+	inline auto nMap(size_t Count, T fnc, const size_t Base) {
+		std::vector<decltype(fnc(0))> ret(Count - Base);
+		for (auto i = Base; i < Count; i++) {
+			ret[i - Base] = fnc(i);
+		}
+		return std::move(ret);
+	}
+
 	template<typename T1, typename T2>
 	inline auto Map(const T1 & Array, T2 cvt, size_t Start, size_t Size = 0);
+
 	template<typename T1, typename T2>
 	inline auto Map(const T1 & Array, T2 cvt, size_t Start, size_t Size) {
 		if (!Size)Size = Array.size();
@@ -129,17 +141,6 @@ namespace PVX {
 		ret.reserve(Array.size());
 		for (auto i = Start; i < Size; i++)
 			ret.push_back(cvt(Array[i]));
-		return std::move(ret);
-	}
-
-	template<typename T>
-	inline auto Map(size_t Count, T fnc, const size_t Base = 0);
-	template<typename T>
-	inline auto Map(size_t Count, T fnc, const size_t Base) {
-		std::vector<decltype(fnc(0))> ret(Count - Base);
-		for (auto i = Base; i < Count; i++) {
-			ret[i - Base] = fnc(i);
-		}
 		return std::move(ret);
 	}
 

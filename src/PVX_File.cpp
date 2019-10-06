@@ -8,6 +8,7 @@
 #include<PVX_Encode.h>
 #include<PVX_String.h>
 #include<PVX_Regex.h>
+#include <PVX.inl>
 #include<mutex>
 
 namespace PVX_Helpers {
@@ -42,6 +43,42 @@ namespace PVX {
 			fclose(fin);
 			return ret;
 		}
+		std::string FileFullPath(const std::string& Filename) {
+			if (Filename.size()) {
+				if (Filename.find(":\\")!=std::string::npos) return Filename;
+				auto fn = [&] {
+					if (Filename[0]=='\\')
+						return Filename.substr(1);
+					return Filename;
+				}();
+				if (FileExists(fn)) return CurrentPath()+ "\\" + fn;
+				size_t buffSize;
+				getenv_s(&buffSize, nullptr, 0, "PATH");
+				if (buffSize > 1) {
+					std::string var;
+					var.resize(buffSize-1);
+					getenv_s(&buffSize, &var[0], buffSize, "PATH");
+					size_t dbg = 0;
+					auto paths = PVX::Map(PVX::String::Split_No_Empties_Trimed(var, ";"), [&](const std::string& s) {
+						dbg++;
+						if (s.back()!='\\')
+							return s+"\\";
+						return s;
+					});
+					for (auto& p : paths) {
+						std::string ret = p+fn;
+						if (FileExists(ret))
+							return ret;
+					}
+				}
+			}
+			return std::string();
+		}
+		std::string GetFullPath(const std::string& Filename) {
+			auto p = PVX::String::Split(FileFullPath(Filename), "\\");
+			p.pop_back();
+			return PVX::String::Join(p, "\\");
+		}
 		int Write(const std::string & fn, const void*data, size_t Size) {
 			FILE * fout;
 			if(fopen_s(&fout, fn.c_str(), "wb"))return 0;
@@ -70,8 +107,10 @@ namespace PVX {
 			if(fopen_s(&file, Filename, "rb"))return ret;
 			fseek(file, 0, SEEK_END);
 			ret.resize(ftell(file));
-			fseek(file, 0, SEEK_SET);
-			fread(&ret[0], 1, ret.size(), file);
+			if (ret.size()) {
+				fseek(file, 0, SEEK_SET);
+				fread(&ret[0], 1, ret.size(), file);
+			}
 			fclose(file);
 			return ret;
 		}
