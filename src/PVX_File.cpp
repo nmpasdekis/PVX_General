@@ -464,7 +464,7 @@ namespace PVX {
 			delete ofn.lpstrFile;
 			return ret;
 		}
-		std::wstring wOpenFileDialog(HWND Parent, const wchar_t * Filter, const wchar_t * Filename) {
+		std::wstring OpenFileDialog(HWND Parent, const wchar_t * Filter, const wchar_t * Filename) {
 			std::wstring fltr = Filter;
 			fltr += L'\0';
 			for (auto & f : fltr) if (f == '|')f = 0;
@@ -505,6 +505,29 @@ namespace PVX {
 			ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 			std::string ret;
 			if(GetSaveFileNameA(&ofn)) {
+				ret = ofn.lpstrFile;
+			}
+			delete ofn.lpstrFile;
+			return ret;
+		}
+		std::wstring SaveFileDialog(HWND Parent, const wchar_t* Filter, const wchar_t* Filename) {
+			std::wstring fltr = Filter;
+			fltr += L'\0';
+			for (auto& f : fltr) if (f == '|')f = 0;
+			OPENFILENAMEW ofn{ 0 };
+			ofn.lStructSize = sizeof(OPENFILENAMEW);
+			ofn.hwndOwner = Parent;
+			ofn.lpstrFile = new wchar_t[MAX_PATH];
+			if (Filename)
+				lstrcpyW(ofn.lpstrFile, Filename);
+			else
+				ofn.lpstrFile[0] = 0;
+			ofn.nMaxFile = MAX_PATH;
+			ofn.lpstrFilter = fltr.c_str();
+			ofn.nFilterIndex = 0;
+			ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+			std::wstring ret;
+			if (GetSaveFileNameW(&ofn)) {
 				ret = ofn.lpstrFile;
 			}
 			delete ofn.lpstrFile;

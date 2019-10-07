@@ -139,8 +139,9 @@ namespace PVX {
 		void MakeDirectory(const std::wstring & Directory);
 
 		std::string OpenFileDialog(HWND Parent, const char * Filter, const char * Filename = 0);
-		std::wstring wOpenFileDialog(HWND Parent, const wchar_t * Filter, const wchar_t * Filename = 0);
-		std::string SaveFileDialog(HWND Parent, const char * Filter, const char * Filename = 0);
+		std::wstring OpenFileDialog(HWND Parent, const wchar_t * Filter, const wchar_t * Filename = 0);
+		std::string SaveFileDialog(HWND Parent, const char* Filter, const char* Filename = 0);
+		std::wstring SaveFileDialog(HWND Parent, const wchar_t* Filter, const wchar_t* Filename = 0);
 		JSON::Item LoadJson(const char * Filename);
 		JSON::Item LoadJson(const wchar_t * Filename);
 		std::wstring wCurrentPath();

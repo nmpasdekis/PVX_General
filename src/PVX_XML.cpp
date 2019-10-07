@@ -7,7 +7,7 @@
 #include <PVX_json.h>
 
 namespace PVX::XML {
-	std::vector<std::wstring> RemoveStrings(std::wstring& txt) {
+	inline std::vector<std::wstring> RemoveStrings(std::wstring& txt) {
 		std::wstring ret;
 		std::vector<std::wstring> Strings;
 		int Escape = 0;
@@ -31,7 +31,7 @@ namespace PVX::XML {
 		txt = ret;
 		return Strings;
 	}
-	std::vector<std::wstring> RemoveCDATA(std::wstring& ret, int& Error) {
+	inline std::vector<std::wstring> RemoveCDATA(std::wstring& ret, int& Error) {
 		std::vector<std::wstring> CDATA;
 		auto Start = ret.find(L"<![CDATA[");
 		while (Start != std::wstring::npos) {
@@ -44,7 +44,7 @@ namespace PVX::XML {
 		}
 		return CDATA;
 	}
-	std::wstring RemoveComments(const std::wstring& txt, int& Error) {
+	inline std::wstring RemoveComments(const std::wstring& txt, int& Error) {
 		std::wstring ret = txt;
 		auto Start = ret.find(L"<!--");
 		while (Start != std::wstring::npos) {
@@ -56,7 +56,7 @@ namespace PVX::XML {
 		}
 		return ret;
 	}
-	void removeHead(std::wstring& txt, int& Error) {
+	inline void removeHead(std::wstring& txt, int& Error) {
 		size_t c = 0;
 		for (; c<txt.size()&&(txt[c]==L' '||txt[c]==L'\t'||txt[c]==L'\r'||txt[c]==L'\n'); c++);
 		if (c<(txt.size()-2) && c == txt.find(L"<?xml")) {
@@ -79,7 +79,7 @@ namespace PVX::XML {
 	const std::wregex  attribs(LR"regex(([a-zA-Z][-a-zA-Z0-9]*)\s*(=\s*"\s)?)regex", std::regex_constants::optimize);
 
 
-	static std::vector<Element> Tokenize(const std::wstring& Text, int& Error) {
+	inline std::vector<Element> Tokenize(const std::wstring& Text, int& Error) {
 		std::wstring txt = RemoveComments(Text, Error);
 		removeHead(txt, Error);
 		auto CDATA = RemoveCDATA(txt, Error);

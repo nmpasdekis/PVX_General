@@ -473,8 +473,7 @@ namespace PVX {
 		}
 		std::string Windows1253_Greek(const std::wstring & data) {
 			wchar_t map[65536];
-			for(int i = 0; i < 65536; i++)
-				map[i] = '?';
+			for(int i = 0; i < 65536; i++) map[i] = '?';
 			for(int i = 0; i < 256; i++)
 				map[Windows1253_lut[i]] = i;
 			std::string ret;

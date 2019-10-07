@@ -100,14 +100,14 @@ namespace PVX{
 
 		string Trim(const string & s) {
 			int start, end;
-			for(start = 0; s[start] && (s[start] == ' ' || s[start] == '\t' || s[start] == '\n'); start++);
-			for(end = s.size() - 1; end >= 0 && (s[end] == ' ' || s[end] == '\t' || s[end] == '\n'); end--);
+			for(start = 0; s[start] && (s[start] == ' ' || s[start] == '\t' || s[start] == '\n' || s[start] == '\r'); start++);
+			for(end = s.size() - 1; end >= 0 && (s[end] == ' ' || s[end] == '\t' || s[end] == '\n' || s[start] == '\r'); end--);
 			return s.substr(start, end - start + 1);
 		}
 		wstring Trim(const wstring & s) {
 			int start, end;
-			for(start = 0; s[start] && (s[start] == L' ' || s[start] == L'\t' || s[start] == L'\n'); start++);
-			for(end = s.size() - 1; end >= 0 && (s[end] == L' ' || s[end] == L'\t' || s[end] == L'\n'); end--);
+			for(start = 0; s[start] && (s[start] == L' ' || s[start] == L'\t' || s[start] == L'\n' || s[start] == L'\r'); start++);
+			for(end = s.size() - 1; end >= 0 && (s[end] == L' ' || s[end] == L'\t' || s[end] == L'\n' || s[start] == L'\r'); end--);
 			return s.substr(start, end - start + 1);
 		}
 
@@ -179,6 +179,28 @@ namespace PVX{
 			while (index != std::string::npos) {
 				ret.replace(index, osz, newWord);
 				index = ret.find(pattern, index + nsz);
+			}
+			return ret;
+		}
+
+		std::string ReplaceOne(const std::string& Text, const std::string& pattern, const std::string& newWord) {
+			std::string ret(Text);
+			auto osz = pattern.size();
+			auto nsz = newWord.size();
+			auto index = ret.find(pattern, 0);
+			while (index != std::string::npos) {
+				ret.replace(index, osz, newWord);
+				index = ret.find(pattern, index + nsz);
+			}
+			return ret;
+		}
+
+		std::wstring ReplaceOne(const std::wstring& Text, const std::wstring& pattern, const std::wstring& newWord) {
+			std::wstring ret(Text);
+			auto osz = pattern.size();
+			auto index = ret.find(pattern, 0);
+			if (index != std::string::npos) {
+				ret.replace(index, osz, newWord);
 			}
 			return ret;
 		}

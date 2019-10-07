@@ -8,6 +8,7 @@
 #include <initializer_list>
 #include <set>
 #include <algorithm>
+#include <execution>
 
 namespace PVX {
 	template<typename T>
@@ -144,9 +145,13 @@ namespace PVX {
 		return std::move(ret);
 	}
 
-	template<typename T1, typename T2>
-	void forEach(const std::vector<T1> & Array, T2 fnc) {
+	template<typename T, typename T2>
+	void forEach(const std::vector<T> & Array, T2 fnc) {
 		std::for_each(Array.begin(), Array.end(), fnc);
+	}
+	template<typename T>
+	void forEach_Parallel(const std::vector<T>& Array, std::function<void(T&)> fnc) {
+		std::for_each(std::execution::par, Array.begin(), Array.end(), fnc);
 	}
 	template<typename KeyType, typename ValueType>
 	void forEach(const std::map<KeyType, ValueType> & Map, std::function<void(const KeyType&, const ValueType&)> fnc) {
@@ -159,6 +164,13 @@ namespace PVX {
 	inline auto Map(const std::vector<T1> & Array, T2 fnc) {
 		std::vector<decltype(fnc(Array[0]))> ret(Array.size());
 		std::transform(Array.begin(), Array.end(), ret.begin(), fnc);
+		return std::move(ret);
+	}
+	template<typename T1, typename T2, typename T>
+	auto Map(const std::vector<T>& Array, T2 clb) {
+		std::vector<T1> ret;
+		ret.reserve(Array.size());
+		for (auto& x: (*this)) ret.emplace_back(clb(x));
 		return std::move(ret);
 	}
 
@@ -227,6 +239,46 @@ namespace PVX {
 			src += SrcStride;
 		}
 	}
+
+	template<typename T>
+	struct Vector : public std::vector<T> {
+		template<typename T2>
+		auto map(T2 clb) {
+			Vector<decltype(clb((*this)[0]))> ret;
+			ret.reserve(std::vector<T>::size());
+			std::transform(std::vector<T>::begin(), std::vector<T>::end(), std::back_inserter(ret), clb);
+			return std::move(ret);
+		}
+		template<typename T1, typename T2>
+		auto map(T2 clb) {
+			Vector<T1> ret;
+			ret.reserve(std::vector<T>::size());
+			for (auto& x: (*this)) ret.emplace_back(clb(x));
+			return std::move(ret);
+		}
+		
+		inline auto filter(std::function<bool(const T&)> clb) const {
+			Vector<T> ret;
+			ret.reserve(std::vector<T>::size());
+			for (auto& x: (*this)) if(clb(x)) 
+				ret.push_back(x);
+			//ret.shrink_to_fit();
+			return std::move(ret);
+		}
+		inline void forEach(std::function<void(T&)> clb) {
+			std::for_each(std::vector<T>::begin(), std::vector<T>::end(), clb);
+		}
+		inline void forEach_Parallel(std::function<void(T&)> clb) {
+			std::for_each(std::execution::par, std::vector<T>::begin(), std::vector<T>::end(), clb);
+		}
+
+
+		template<typename ...Params>
+		explicit Vector(Params && ... param) {
+			std::vector<T>::reserve(sizeof...(param));
+			(std::vector<T>::emplace_back(std::forward<Params>(param)), ...);
+		}
+	};
 }
 
 #endif
