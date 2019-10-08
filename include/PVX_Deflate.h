@@ -7,9 +7,15 @@
 
 namespace PVX {
 	namespace Compress {
+		enum class DeflateLevel {
+			NoCompression	= 0,
+			BestSpeed		= 1,
+			BestCompression	= 9,
+			Default			= -1
+		};
 
-		int Deflate(std::vector<unsigned char> & dest, const unsigned char *source, int sSize, int level = Z_BEST_COMPRESSION);
-		std::vector<unsigned char> Deflate(const std::vector<unsigned char> & data, int Level = Z_BEST_COMPRESSION);
+		int Deflate(std::vector<unsigned char> & dest, const unsigned char *source, int sSize, DeflateLevel level = DeflateLevel::BestCompression);
+		std::vector<unsigned char> Deflate(const std::vector<unsigned char> & data, DeflateLevel level = DeflateLevel::BestCompression);
 
 		int Inflate(std::vector<unsigned char> & dest, const unsigned char *source, int sSize);
 		std::vector<unsigned char> Inflate(const std::vector<unsigned char> & data);

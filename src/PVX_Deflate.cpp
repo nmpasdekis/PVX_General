@@ -1,6 +1,7 @@
 #include <assert.h>
 #include "zlib.h"
 #include <vector>
+#include <PVX_Deflate.h>
 
 /*
 #define Z_NO_COMPRESSION         0
@@ -13,7 +14,7 @@ namespace PVX {
 
 #define CHUNK 0x4000
 
-		int Deflate(std::vector<unsigned char> & dest, const unsigned char *source, int sSize, int level) {
+		int Deflate(std::vector<unsigned char> & dest, const unsigned char *source, int sSize, DeflateLevel level) {
 			int ret, flush;
 			unsigned have;
 			z_stream strm;
@@ -25,7 +26,7 @@ namespace PVX {
 			strm.zfree = Z_NULL;
 			strm.opaque = Z_NULL;
 			
-			if ((ret = deflateInit(&strm, level)) != Z_OK) return ret;
+			if ((ret = deflateInit(&strm, (int)level)) != Z_OK) return ret;
 
 
 			/* compress until end of file */
@@ -61,7 +62,7 @@ namespace PVX {
 			(void)deflateEnd(&strm);
 			return Z_OK;
 		}
-		std::vector<unsigned char> Deflate(const std::vector<unsigned char> & data, int Level) {
+		std::vector<unsigned char> Deflate(const std::vector<unsigned char> & data, DeflateLevel Level) {
 			std::vector<unsigned char> ret;
 			if (Deflate(ret, data.data(), data.size(), Level)) ret.clear();
 			return ret;
