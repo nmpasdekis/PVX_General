@@ -124,7 +124,8 @@ namespace PVX {
 		std::vector<unsigned char> ReadBinary(const wchar_t * Filename, size_t offset, size_t length);
 		size_t ReadBinary(const wchar_t * Filename, std::vector<unsigned char> & Data);
 		size_t ReadBinary(const wchar_t * Filename, size_t offset, size_t length, std::vector<unsigned char> & Data);
-		std::string ReadText(const char * Filename);
+		std::string ReadText(const char* Filename);
+		std::string ReadText(const wchar_t * Filename);
 		std::vector<std::string> Dir(const std::string & Expression);
 		std::vector<std::wstring> Dir(const std::wstring & Expression);
 		std::vector<std::string> DirFull(const std::string & Expression);

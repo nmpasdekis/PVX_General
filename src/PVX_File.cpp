@@ -204,6 +204,13 @@ namespace PVX {
 			inp.close();
 			return txt;
 		}
+		std::string ReadText(const wchar_t* Filename) {
+			std::ifstream inp(Filename);
+			if (inp.fail())return "";
+			std::string txt(std::istreambuf_iterator<char>(inp), (std::istreambuf_iterator<char>()));
+			inp.close();
+			return txt;
+		}
 
 		std::vector<std::string> SplitPath(const std::string & Path) {
 			return PVX::String::Split_No_Empties(Path, "\\");
