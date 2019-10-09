@@ -88,6 +88,33 @@ namespace PVX{
 				ret.push_back(Text.substr(last, Text.size() - last));
 			return ret;
 		}
+
+		std::pair<std::string, std::string> Split2(const std::string& Text, const std::string& Separator) {
+			if (auto index = Text.find(Separator); index!=std::string::npos) {
+				return { Text.substr(0, index), Text.substr(index + Separator.size()) };
+			}
+			return { Text, "" };
+		}
+		std::pair<std::wstring, std::wstring> Split2(const std::wstring& Text, const std::wstring& Separator) {
+			if (auto index = Text.find(Separator); index!=std::wstring::npos) {
+				return { Text.substr(0, index), Text.substr(index + Separator.size()) };
+			}
+			return { Text, L"" };
+		}
+		std::pair<std::string, std::string> Split2_Trimed(const std::string& Text, const std::string& Separator) {
+			if (auto index = Text.find(Separator); index!=std::string::npos) {
+				return { Trim(Text.substr(0, index)), Trim(Text.substr(index + Separator.size())) };
+			}
+			return { Trim(Text), "" };
+		}
+		std::pair<std::wstring, std::wstring> Split2_Trimed(const std::wstring& Text, const std::wstring& Separator) {
+			if (auto index = Text.find(Separator); index!=std::wstring::npos) {
+				return { Trim(Text.substr(0, index)), Trim(Text.substr(index + Separator.size())) };
+			}
+			return { Trim(Text), L"" };
+		}
+
+
 		std::wstring Join(const std::vector<std::wstring> & List, const std::wstring & separator) {
 			std::wstringstream ret;
 			if (List.size()) {

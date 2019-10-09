@@ -583,7 +583,11 @@ namespace PVX {
 			return L"\n" + std::wstring(l, L'\t');
 		}
 		
-		std::wstring stringify(const Item& obj, int level) {
+		std::wstring stringify(const Item& obj, int level, bool Format) {
+			std::wstring Lvl = Format? lvl(level): L"";
+			std::wstring Lvl1 = Format ? lvl(level + 1): L"";
+			std::wstring colon = Format ? L": " : L":";
+
 			std::wstringstream ret;
 			switch (obj.Type) {
 				case jsElementType::Undefined:
@@ -606,14 +610,14 @@ namespace PVX {
 					if (obj.Array.size()) {
 						size_t i = 0;
 						while (i< obj.Array.size() && obj.Array[i].Type==jsElementType::Undefined)i++;
-						ret << lvl(level + 1) << stringify(obj.Array[i], level + 1); i++;
+						ret << Lvl1 << stringify(obj.Array[i], level + 1); i++;
 						while (i< obj.Array.size() && obj.Array[i].Type==jsElementType::Undefined)i++;
 						for (; i < obj.Array.size(); i++) {
-							ret << "," << lvl(level + 1) << stringify(obj.Array[i], level + 1);
+							ret << "," << Lvl1 << stringify(obj.Array[i], level + 1);
 							while (i< obj.Array.size() && obj.Array[i].Type==jsElementType::Undefined)i++;
 						}
 					}
-					ret << lvl(level) << "]";
+					ret << Lvl << "]";
 					return ret.str();
 				case jsElementType::Object:
 				{
@@ -623,16 +627,16 @@ namespace PVX {
 					while (iter!=obj.Object.end() && iter->second.Type == jsElementType::Undefined) iter++;
 
 					if (iter != obj.Object.end()) {
-						ret << lvl(level + 1) << JsonString(iter->first) << ": " << stringify(iter->second, level + 1);
+						ret << Lvl1 << JsonString(iter->first) << colon << stringify(iter->second, level + 1);
 						++iter;
 					}
 
 					for (; iter != obj.Object.end(); ++iter) {
 						if (iter->second.Type != jsElementType::Undefined)
-							ret << "," << lvl(level + 1) << JsonString(iter->first) << ": " << stringify(iter->second, level + 1);
+							ret << "," << Lvl1 << JsonString(iter->first) << colon << stringify(iter->second, level + 1);
 					}
 
-					ret << lvl(level) << "}";
+					ret << Lvl << "}";
 					return ret.str();
 				}
 				default:
@@ -640,8 +644,8 @@ namespace PVX {
 			}
 		}
 
-		std::wstring stringify(const Item & obj) {
-			return stringify(obj, 0);
+		std::wstring stringify(const Item & obj, bool Format) {
+			return stringify(obj, 0, Format);
 		}
 		Item parse(const unsigned char * data, int size) {
 			if(!size)return jsElementType::Undefined;

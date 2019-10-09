@@ -14,7 +14,7 @@ namespace PVX {
 			Default			= -1
 		};
 
-		int Deflate(std::vector<unsigned char> & dest, const unsigned char *source, int sSize, DeflateLevel level = DeflateLevel::BestCompression);
+		int Deflate(std::vector<unsigned char>& dest, const unsigned char* source, int sSize, DeflateLevel level = DeflateLevel::BestCompression);
 		std::vector<unsigned char> Deflate(const std::vector<unsigned char> & data, DeflateLevel level = DeflateLevel::BestCompression);
 
 		int Inflate(std::vector<unsigned char> & dest, const unsigned char *source, int sSize);

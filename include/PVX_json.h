@@ -177,7 +177,7 @@ namespace PVX {
 			array(const std::initializer_list<Item> & itm) : itms{itm}{}
 		};
 
-		std::wstring stringify(const Item&);
+		std::wstring stringify(const Item& Object, bool Format = false);
 		Item parse(const unsigned char*, int size);
 		Item parse(const std::vector<unsigned char> &);
 		Item parse(const std::wstring & Json);

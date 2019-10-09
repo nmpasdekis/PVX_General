@@ -38,6 +38,12 @@ namespace PVX{
 		std::string ToLower(const std::string & txt);
 		std::wstring ToLower(const std::wstring & txt);
 
+		std::pair<std::string, std::string> Split2(const std::string& Text, const std::string& Separator);
+		std::pair<std::wstring, std::wstring> Split2(const std::wstring& Text, const std::wstring& Separator);
+		std::pair<std::string, std::string> Split2_Trimed(const std::string& Text, const std::string& Separator);
+		std::pair<std::wstring, std::wstring> Split2_Trimed(const std::wstring& Text, const std::wstring& Separator);
+
+
 		//template<typename T, typename T2>
 		//inline std::wstring Join(const std::vector<T> & List, const std::wstring & separator, T2 fnc) {
 		//	std::wstringstream ret;
