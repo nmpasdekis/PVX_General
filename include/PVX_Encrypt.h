@@ -40,7 +40,7 @@ namespace PVX::Encrypt {
 	};
 
 	template<int BlockSize, int OutputSize, typename Hash>
-	std::array<unsigned char, OutputSize> HMAC(const void* Message, size_t MessageSize, const void* Key, size_t KeySize) {
+	std::array<unsigned char, OutputSize> HMAC(const void* Key, size_t KeySize, const void* Message, size_t MessageSize) {
 		using Block = std::array<unsigned char, BlockSize>;
 		using OutBlock = std::array<unsigned char, OutputSize>;
 
@@ -71,5 +71,13 @@ namespace PVX::Encrypt {
 		}
 		auto Inner = Hash().Update(ipad).Update(Message, MessageSize)();
 		return Hash().Update(opad).Update(Inner)();
+	}
+
+	inline std::array<unsigned char, 20> HMAC_SHA1(const void* Key, size_t KeySize, const void* Message, size_t MessageSize) {
+		return HMAC<64, 20, SHA1_Algorithm>(Key, KeySize, Message, MessageSize);
+	}
+	template<typename T1, typename T2>
+	inline std::array<unsigned char, 20> HMAC_SHA1(const T1& Message, const T2& Key) {
+		return HMAC_HMAC<64, 20, SHA1_Algorithm>SHA1(Key.data(), Key.size(), Message.data(), Message.size());
 	}
 }
