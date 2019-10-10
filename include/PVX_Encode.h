@@ -23,9 +23,6 @@ namespace PVX{
 		std::string UriEncode(const std::vector<unsigned char> & s);
 		std::string Uri(const std::wstring & s);
 		std::string Windows1253_Greek(const std::wstring & data);
-
-
-		std::array<unsigned char, 20> SHA1(const void * msg, size_t sz);
 	}
 	namespace Decode{
 		std::vector<unsigned char> Base64(const std::string & base64);
