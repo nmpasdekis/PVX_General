@@ -1,6 +1,7 @@
 #include <array>
 #include <vector>
 #include <functional>
+#include <type_traits>
 
 namespace PVX::Encrypt {
 	std::array<unsigned char, 20> SHA1(const void* msg, size_t sz);
@@ -39,12 +40,34 @@ namespace PVX::Encrypt {
 		}
 	};
 
-	template<int BlockSize, int OutputSize, typename Hash>
-	std::array<unsigned char, OutputSize> HMAC(const void* Key, size_t KeySize, const void* Message, size_t MessageSize) {
+	class SHA256_Algorithm : public HashAlgorithm<20> {
+	private:
+		unsigned int h0 = 0x67452301;
+		unsigned int h1 = 0xEFCDAB89;
+		unsigned int h2 = 0x98BADCFE;
+		unsigned int h3 = 0x10325476;
+		unsigned int h4 = 0xC3D2E1F0;
+		unsigned long long BitCount = 0;
+		unsigned long long More = 0;
+		unsigned char tmp[128]{ 0 };
+	protected:
+		void ProcessBlock(void* Block);
+	public:
+		HashAlgorithm<20>& Update(const void* Message, size_t MessageSize);
+		std::array<unsigned char, 20> operator()();
+		template<typename T>
+		HashAlgorithm<20>& Update(const T& Message) {
+			return Update(Message.data(), Message.size());
+		}
+	};
+
+	template<typename Hash, int BlockSize>
+	decltype(Hash()()) HMAC(const void* Key, size_t KeySize, const void* Message, size_t MessageSize) {
 		using Block = std::array<unsigned char, BlockSize>;
-		using OutBlock = std::array<unsigned char, OutputSize>;
+		using OutBlock = decltype(Hash()());
 
 		Block key = [](const unsigned char* k, size_t sz) {
+			constexpr int OutputSize = sizeof(OutBlock);
 			if (sz > BlockSize) {
 				OutBlock tmpKey = Hash().Update(k, sz)();
 				if constexpr (OutputSize < BlockSize) {
@@ -73,11 +96,11 @@ namespace PVX::Encrypt {
 		return Hash().Update(opad).Update(Inner)();
 	}
 
-	inline std::array<unsigned char, 20> HMAC_SHA1(const void* Key, size_t KeySize, const void* Message, size_t MessageSize) {
-		return HMAC<64, 20, SHA1_Algorithm>(Key, KeySize, Message, MessageSize);
+	inline auto HMAC_SHA1(const void* Key, size_t KeySize, const void* Message, size_t MessageSize) {
+		return HMAC<SHA1_Algorithm, 64>(Key, KeySize, Message, MessageSize);
 	}
 	template<typename T1, typename T2>
-	inline std::array<unsigned char, 20> HMAC_SHA1(const T1& Message, const T2& Key) {
-		return HMAC_HMAC<64, 20, SHA1_Algorithm>SHA1(Key.data(), Key.size(), Message.data(), Message.size());
+	inline auto HMAC_SHA1(const T1& Key, const T2& Message) {
+		return HMAC<SHA1_Algorithm, 64>(Key.data(), Key.size(), Message.data(), Message.size());
 	}
 }

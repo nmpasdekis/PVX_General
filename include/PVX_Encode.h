@@ -12,6 +12,8 @@ namespace PVX{
 		std::wstring ToString(const std::string & data);
 		std::string Base64(const void * data, int size);
 		std::string Base64(const std::vector<unsigned char> & data);
+		std::string Base64Url(const void* data, int size);
+		std::string Base64Url(const std::vector<unsigned char>& data);
 		std::vector<unsigned char> UTF0(const std::wstring & Text);
 		std::vector<unsigned char> UTF(const std::wstring & Text);
 		void UTF(std::vector<unsigned char> & utf, const std::wstring & Text);
@@ -28,6 +30,11 @@ namespace PVX{
 		std::vector<unsigned char> Base64(const std::string & base64);
 		std::vector<unsigned char> Base64(const std::wstring & base64);
 		std::string Base64_String(const std::string & base64);
+
+		std::vector<unsigned char> Base64Url(const char* Base64, size_t sz);
+		std::vector<unsigned char> Base64Url(const std::string& base64);
+		std::vector<unsigned char> Base64Url(const wchar_t* Base64, size_t sz);
+		std::vector<unsigned char> Base64Url(const std::wstring& base64);
 
 		std::wstring UTF(const unsigned char * utf, int sz);
 		std::wstring UTF(const std::vector<unsigned char> & Utf);

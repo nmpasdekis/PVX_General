@@ -378,6 +378,46 @@ namespace PVX {
 		string Base64(const vector<unsigned char> & data) {
 			return Base64(data.data(), data.size());
 		}
+		string Base64Url(const void* data, int size) {
+			const char* map =
+				"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+				"abcdefghijklmnopqrstuvwxyz"
+				"0123456789-_";
+
+			int i, j, k, sz = ((size + 2) / 3) << 2;
+			int padding = (3 - ((size) % 3)) % 3;
+			string ret;
+			ret.resize(sz);
+			char* out = &ret[0];
+			for (i = 0, j = 0; i + 2 < size; i += 3, j += 4) {
+				unsigned int tmp = ((unsigned char*)data)[i] << 16;
+				tmp |= ((unsigned char*)data)[i + 1] << 8;
+				tmp |= ((unsigned char*)data)[i + 2];
+				out[0] = map[(tmp >> 18) & 0x3f];
+				out[1] = map[(tmp >> 12) & 0x3f];
+				out[2] = map[(tmp >> 6) & 0x3f];
+				out[3] = map[tmp & 0x3f];
+				out += 4;
+			}
+			if (padding) {
+				unsigned int tmp = 0;
+				unsigned char* dt = ((unsigned char*)data) + i;
+				for (k = 0; k < (3 - padding); k++) {
+					tmp |= (*dt) << (16 - (k << 3));
+					dt++;
+				}
+				out[0] = map[(tmp >> 18) & 0x3f];
+				out[1] = map[(tmp >> 12) & 0x3f];
+				out[2] = map[(tmp >> 6) & 0x3f];
+				for (; k < 3; k++) {
+					out[k + 1] = '=';
+				}
+			}
+			return ret;
+		}
+		string Base64Url(const vector<unsigned char>& data) {
+			return Base64Url(data.data(), data.size());
+		}
 
 		int UTF_Length(const wchar_t * Str) {
 			int len = 0;
@@ -493,7 +533,88 @@ namespace PVX {
 		//	return 0;
 		//}
 
-		unsigned char b64decLut[] = {
+		const std::array<unsigned char, 256> b64Url2decLut = [] {
+			std::array<unsigned char, 256> ret{ 0 };
+			const char * map =
+				"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+				"abcdefghijklmnopqrstuvwxyz"
+				"0123456789-_";
+			for (int i = 0; i<64;i++) {
+				ret[map[i]] = i;
+			}
+			return ret;
+		}();
+		std::vector<unsigned char> Base64Url(const char * Base64, size_t sz) {
+			union {
+				unsigned int v32;
+				struct {
+					unsigned char v2, v1, v0, padding;
+				};
+				unsigned char a4[4];
+			}tmp = { 0 };
+			int padding;
+			for (padding = 0; Base64[sz - padding - 1] == '='; padding++);
+
+			int p3 = (!padding&&(sz%4) ? 1 : 0);
+			int outsize = ((3 * sz) / 4) - padding + p3;
+			if (!outsize) return {};
+			std::vector<unsigned char> ret(outsize);
+			unsigned char* o = &ret[0];
+			//outsize -= 3;
+			for (int i = 4; i < sz; i += 4, o += 3, Base64 += 4) {
+				tmp.v32 = (b64Url2decLut[Base64[0]] << 18) | (b64Url2decLut[Base64[1]] << 12) | (b64Url2decLut[Base64[2]] << 6) | b64Url2decLut[Base64[3]];
+				o[0] = tmp.v0;
+				o[1] = tmp.v1;
+				o[2] = tmp.v2;
+			}
+			int p2 = sz % 4;
+			tmp.v32 = 0;
+			for (int i = 0; i<p2; i++) {
+				tmp.v32 |= b64Url2decLut[Base64[i]] << (18 - i * 6);
+			}
+			for (int i = 0; i< 3 - p3; i++) {
+				o[i] = tmp.a4[2-i];
+			}
+			return ret;
+		}
+		std::vector<unsigned char> Base64Url(const std::string& base64) {
+			return Base64Url(base64.c_str(), base64.size());
+		}
+		std::vector<unsigned char> Base64Url(const wchar_t* Base64, size_t sz) {
+			union {
+				unsigned int v32;
+				struct {
+					unsigned char v2, v1, v0, padding;
+				};
+				unsigned char a4[4];
+			}tmp = { 0 };
+			int padding;
+			for (padding = 0; Base64[sz - padding - 1] == '='; padding++);
+
+			int outsize = 3 * (sz >> 2) - padding;
+			if (!outsize) return {};
+			std::vector<unsigned char> ret(outsize);
+			unsigned char* o = &ret[0];
+			outsize -= 2;
+			for (int i = 0; i < outsize; i += 3) {
+				tmp.v32 = (b64Url2decLut[Base64[0]] << 18) | (b64Url2decLut[Base64[1]] << 12) | (b64Url2decLut[Base64[2]] << 6) | b64Url2decLut[Base64[3]]; Base64 += 4;
+				o[0] = tmp.v0;
+				o[1] = tmp.v1;
+				o[2] = tmp.v2;
+				o += 3;
+			}
+			tmp.v32 = (b64Url2decLut[Base64[0]] << 18) | (b64Url2decLut[Base64[1]] << 12) | (b64Url2decLut[Base64[2]] << 6) | b64Url2decLut[Base64[3]]; Base64 += 4;
+			if (padding)
+				o[0] = tmp.v0;
+			if (padding == 1)
+				o[1] = tmp.v1;
+			return ret;
+		}
+		std::vector<unsigned char> Base64Url(const std::wstring& base64) {
+			return Base64Url(base64.c_str(), base64.size());
+		}
+
+		const unsigned char b64decLut[] = {
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3E, 0x00, 0x00, 0x00, 0x3F,
@@ -506,6 +627,38 @@ namespace PVX {
 #define getBase64Index(b) (b64decLut[b])
 		//#define getBase64Index(b) (((b) >= 'A'&&(b) <= 'Z')?((b) - 'A'):((b) >= 'a'&&(b) <= 'z')?((b) - 'a' + 26):((b) >= '0'&&(b) <= '9')?((b) - '0' + 52):((b) == '+')?62:((b) =='/')?63:0)
 
+		std::string Base64_String(const std::string& base64) {
+			union {
+				unsigned int v32;
+				struct {
+					unsigned char v2, v1, v0, padding;
+				};
+				unsigned char a4[4];
+			}tmp = { 0 };
+			const char* b = base64.c_str();
+			size_t sz = base64.size();
+			int padding;
+			for (padding = 0; b[sz - padding - 1] == '='; padding++);
+
+			int outsize = 3 * (sz >> 2) - padding;
+			string ret;
+			ret.resize(outsize);
+			unsigned char* o = (unsigned char*)ret.c_str();
+			outsize -= 2;
+			for (int i = 0; i < outsize; i += 3) {
+				tmp.v32 = (getBase64Index(b[0]) << 18) | (getBase64Index(b[1]) << 12) | (getBase64Index(b[2]) << 6) | getBase64Index(b[3]); b += 4;
+				o[0] = tmp.v0;
+				o[1] = tmp.v1;
+				o[2] = tmp.v2;
+				o += 3;
+			}
+			tmp.v32 = (getBase64Index(b[0]) << 18) | (getBase64Index(b[1]) << 12) | (getBase64Index(b[2]) << 6) | getBase64Index(b[3]); b += 4;
+			if (padding)
+				o[0] = tmp.v0;
+			if (padding == 1)
+				o[1] = tmp.v1;
+			return ret;
+		}
 		std::vector<unsigned char> Base64(const std::string & base64) {
 			union {
 				unsigned int v32;
@@ -553,38 +706,6 @@ namespace PVX {
 			int outsize = 3 * (sz >> 2) - padding;
 			vector<unsigned char> ret(outsize);
 			unsigned char * o = &ret[0];
-			outsize -= 2;
-			for (int i = 0; i < outsize; i += 3) {
-				tmp.v32 = (getBase64Index(b[0]) << 18) | (getBase64Index(b[1]) << 12) | (getBase64Index(b[2]) << 6) | getBase64Index(b[3]); b += 4;
-				o[0] = tmp.v0;
-				o[1] = tmp.v1;
-				o[2] = tmp.v2;
-				o += 3;
-			}
-			tmp.v32 = (getBase64Index(b[0]) << 18) | (getBase64Index(b[1]) << 12) | (getBase64Index(b[2]) << 6) | getBase64Index(b[3]); b += 4;
-			if (padding)
-				o[0] = tmp.v0;
-			if (padding == 1)
-				o[1] = tmp.v1;
-			return ret;
-		}
-		std::string Base64_String(const std::string & base64) {
-			union {
-				unsigned int v32;
-				struct {
-					unsigned char v2, v1, v0, padding;
-				};
-				unsigned char a4[4];
-			}tmp = { 0 };
-			const char * b = base64.c_str();
-			size_t sz = base64.size();
-			int padding;
-			for (padding = 0; b[sz - padding - 1] == '='; padding++);
-
-			int outsize = 3 * (sz >> 2) - padding;
-			string ret;
-			ret.resize(outsize);
-			unsigned char * o = (unsigned char *)ret.c_str();
 			outsize -= 2;
 			for (int i = 0; i < outsize; i += 3) {
 				tmp.v32 = (getBase64Index(b[0]) << 18) | (getBase64Index(b[1]) << 12) | (getBase64Index(b[2]) << 6) | getBase64Index(b[3]); b += 4;
