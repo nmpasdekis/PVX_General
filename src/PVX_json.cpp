@@ -131,7 +131,7 @@ namespace PVX {
 		Item::Item(const enum jsElementType& tp) : Type{ tp }, NumericFloat{ 0 }, _Integer{ 0 }{}
 		Item::Item(const bool& v) : Type{ jsElementType::Boolean }, NumericFloat{ 0 }, _Integer{ v } {}
 		Item::Item(const int& v) : Type{ jsElementType::Number }, NumericFloat{ 0 }, _Integer{ v } {}
-		Item::Item(const enum jsBoolean& v) : Type{ jsElementType::Number }, NumericFloat{ 0 }, _Integer{ (bool)v } {}
+		//Item::Item(const enum jsBoolean& v) : Type{ jsElementType::Number }, NumericFloat{ 0 }, _Integer{ (bool)v } {}
 		Item::Item(const long long& v) : Type{ jsElementType::Number }, NumericFloat{ 0 }, _Integer{ v } {}
 		Item::Item(const float& v) : Type{ jsElementType::Number }, NumericFloat{ 1 }, _Double{ v } {}
 		Item::Item(const double& v) : Type{ jsElementType::Number }, NumericFloat{ 1 }, _Double{ v } {}
@@ -680,6 +680,7 @@ namespace PVX {
 			tmp = std::regex_replace(tmp, jsonSpaces, L"");
 
 			std::vector<jsonStack> Output, Stack2;
+			Output.reserve(tmp.size());
 			std::vector<char> Stack;
 			int ItemCount = 0;
 			int ints = 0, floats = 0, bools = 0, strings = 0;
@@ -690,7 +691,8 @@ namespace PVX {
 				case '"': Output.push_back({ Strings[strings++], 0 }); ItemCount++; break;
 				case 'i': Output.push_back({ Integers[ints++], 0 }); ItemCount++; break;
 				case 'f': Output.push_back({ Doubles[floats++], 0 }); ItemCount++; break;
-				case 'b': Output.push_back({ Booleans[bools++] ? jsBoolean::True : jsBoolean::False, 0 }); Output.back().val.Type = jsElementType::Boolean; ItemCount++; break;
+				//case 'b': Output.push_back({ Booleans[bools++] ? 1 : 0, 0 }); Output.back().val.Type = jsElementType::Boolean; ItemCount++; break;
+				case 'b': Output.push_back({ (const bool)Booleans[bools++], 0 }); ItemCount++; break;
 				case '0': Output.push_back({ jsElementType::Null, 0 }); ItemCount++;  break;
 				case '{': Stack.push_back('{'); ItemCount = 0; break;
 				case '[': Stack.push_back('['); ItemCount = 0; break;

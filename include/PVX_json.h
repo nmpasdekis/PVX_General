@@ -20,11 +20,6 @@ namespace PVX {
 			Object,
 			Boolean,
 		} jsElementType;
-
-		enum class jsBoolean {
-			False,
-			True
-		};
 		
 		class jsArray;
 
@@ -33,7 +28,6 @@ namespace PVX {
 			~Item();
 			Item();
 
-			//Item(const std::initializer_list<Tuple> & its);
 			Item(const jsArray& its);
 			Item(const enum class jsElementType&);
 			Item(const int&);
@@ -43,7 +37,6 @@ namespace PVX {
 			Item(const std::wstring&);
 			Item(const std::string&);
 			Item(const bool&);
-			Item(const enum jsBoolean&);
 			Item(const char*);
 			Item(const wchar_t*);
 			Item(const nullptr_t&);
@@ -72,12 +65,6 @@ namespace PVX {
 			inline Item(const std::initializer_list<std::tuple<std::wstring, Item>>& dict) : Type{ JSON::jsElementType::Object } {
 				for (auto& [n, v] : dict) Object[n] = v;
 			}
-
-			//template<typename T>
-			//inline Item(const std::initializer_list<Item>& v) : Type{ JSON::jsElementType::Array } {
-			//	for (auto& i : v) Array.push_back(Item{ i });
-			//}
-
 
 			Item & operator=(const enum jsElementType);
 			Item & operator=(const int);

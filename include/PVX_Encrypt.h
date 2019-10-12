@@ -25,7 +25,6 @@ namespace PVX::Encrypt {
 			return Update(Message.data(), Message.size());
 		}
 	};
-
 	class SHA256_Algorithm{
 	private:
 		unsigned int h0 = 0x6a09e667;
@@ -50,7 +49,6 @@ namespace PVX::Encrypt {
 			return Update(Message.data(), Message.size());
 		}
 	};
-
 	class SHA512_Algorithm {
 	private:
 		unsigned long long h0 = 0x6a09e667f3bcc908;
