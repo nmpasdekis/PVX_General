@@ -4,6 +4,7 @@
 #include<vector>
 #include<string>
 #include<array>
+#include<type_traits>
 
 namespace PVX{
 	namespace Encode{
@@ -12,8 +13,10 @@ namespace PVX{
 		std::wstring ToString(const std::string & data);
 		std::string Base64(const void * data, int size);
 		std::string Base64(const std::vector<unsigned char> & data);
-		std::string Base64Url(const void* data, int size);
-		std::string Base64Url(const std::vector<unsigned char>& data);
+		std::string Base64Url(const void* data, int size, bool NoPadding = false);
+		template<typename T>
+		inline std::string Base64Url(const T& data, bool NoPadding = false) { return Base64Url(data.data(), data.size(), NoPadding); }
+		inline std::string Base64Url(const char* data, bool NoPadding = false) { return Base64Url(data, strlen(data), NoPadding); }
 		std::vector<unsigned char> UTF0(const std::wstring & Text);
 		std::vector<unsigned char> UTF(const std::wstring & Text);
 		void UTF(std::vector<unsigned char> & utf, const std::wstring & Text);

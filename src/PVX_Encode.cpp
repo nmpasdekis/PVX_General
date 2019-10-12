@@ -378,16 +378,16 @@ namespace PVX {
 		string Base64(const vector<unsigned char> & data) {
 			return Base64(data.data(), data.size());
 		}
-		string Base64Url(const void* data, int size) {
+		string Base64Url(const void* data, int size, bool NoPadding) {
 			const char* map =
 				"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 				"abcdefghijklmnopqrstuvwxyz"
 				"0123456789-_";
 
 			int i, j, k, sz = ((size + 2) / 3) << 2;
-			int padding = (3 - ((size) % 3)) % 3;
+			size_t padding = (3 - ((size) % 3)) % 3;
 			string ret;
-			ret.resize(sz);
+			ret.resize(sz - (NoPadding ? padding : 0ll));
 			char* out = &ret[0];
 			for (i = 0, j = 0; i + 2 < size; i += 3, j += 4) {
 				unsigned int tmp = ((unsigned char*)data)[i] << 16;
@@ -409,14 +409,13 @@ namespace PVX {
 				out[0] = map[(tmp >> 18) & 0x3f];
 				out[1] = map[(tmp >> 12) & 0x3f];
 				out[2] = map[(tmp >> 6) & 0x3f];
-				for (; k < 3; k++) {
-					out[k + 1] = '=';
+				if (!NoPadding) {
+					for (; k < 3; k++) {
+						out[k + 1] = '=';
+					}
 				}
 			}
 			return ret;
-		}
-		string Base64Url(const vector<unsigned char>& data) {
-			return Base64Url(data.data(), data.size());
 		}
 
 		int UTF_Length(const wchar_t * Str) {
@@ -555,25 +554,27 @@ namespace PVX {
 			int padding;
 			for (padding = 0; Base64[sz - padding - 1] == '='; padding++);
 
-			int p3 = (!padding&&(sz%4) ? 1 : 0);
-			int outsize = ((3 * sz) / 4) - padding + p3;
+			int outsize = ((sz+3) / 4) * 3 - padding;
 			if (!outsize) return {};
 			std::vector<unsigned char> ret(outsize);
-			unsigned char* o = &ret[0];
-			//outsize -= 3;
-			for (int i = 4; i < sz; i += 4, o += 3, Base64 += 4) {
-				tmp.v32 = (b64Url2decLut[Base64[0]] << 18) | (b64Url2decLut[Base64[1]] << 12) | (b64Url2decLut[Base64[2]] << 6) | b64Url2decLut[Base64[3]];
-				o[0] = tmp.v0;
-				o[1] = tmp.v1;
-				o[2] = tmp.v2;
+
+			size_t inCur = 0, outCur = 0;
+			for (; inCur + 4 <= sz && outCur + 3 <= outsize; inCur += 4, outCur += 3) {
+				tmp.v32 = 
+					(b64Url2decLut[Base64[inCur + 0]] << 18) |
+					(b64Url2decLut[Base64[inCur + 1]] << 12) | 
+					(b64Url2decLut[Base64[inCur + 2]] << 6) | 
+					(b64Url2decLut[Base64[inCur + 3]]);
+				ret[outCur + 0] = tmp.v0;
+				ret[outCur + 1] = tmp.v1;
+				ret[outCur + 2] = tmp.v2;
 			}
-			int p2 = sz % 4;
 			tmp.v32 = 0;
-			for (int i = 0; i<p2; i++) {
-				tmp.v32 |= b64Url2decLut[Base64[i]] << (18 - i * 6);
+			for (int i=0; inCur<sz; inCur++,i++) {
+				tmp.v32 |= (b64Url2decLut[unsigned char(Base64[inCur])] << (18 - i * 6));
 			}
-			for (int i = 0; i< 3 - p3; i++) {
-				o[i] = tmp.a4[2-i];
+			for (int i = 0; outCur<outsize; outCur++, i++) {
+				ret[outCur] = tmp.a4[2-i];
 			}
 			return ret;
 		}
@@ -591,23 +592,28 @@ namespace PVX {
 			int padding;
 			for (padding = 0; Base64[sz - padding - 1] == '='; padding++);
 
-			int outsize = 3 * (sz >> 2) - padding;
+			int outsize = ((sz+3) / 4) * 3 - padding;
 			if (!outsize) return {};
 			std::vector<unsigned char> ret(outsize);
-			unsigned char* o = &ret[0];
-			outsize -= 2;
-			for (int i = 0; i < outsize; i += 3) {
-				tmp.v32 = (b64Url2decLut[Base64[0]] << 18) | (b64Url2decLut[Base64[1]] << 12) | (b64Url2decLut[Base64[2]] << 6) | b64Url2decLut[Base64[3]]; Base64 += 4;
-				o[0] = tmp.v0;
-				o[1] = tmp.v1;
-				o[2] = tmp.v2;
-				o += 3;
+
+			size_t inCur = 0, outCur = 0;
+			for (; inCur + 4 <= sz && outCur + 3 <= outsize; inCur += 4, outCur += 3) {
+				tmp.v32 =
+					(b64Url2decLut[Base64[inCur + 0]] << 18) |
+					(b64Url2decLut[Base64[inCur + 1]] << 12) |
+					(b64Url2decLut[Base64[inCur + 2]] << 6) |
+					(b64Url2decLut[Base64[inCur + 3]]);
+				ret[outCur + 0] = tmp.v0;
+				ret[outCur + 1] = tmp.v1;
+				ret[outCur + 2] = tmp.v2;
 			}
-			tmp.v32 = (b64Url2decLut[Base64[0]] << 18) | (b64Url2decLut[Base64[1]] << 12) | (b64Url2decLut[Base64[2]] << 6) | b64Url2decLut[Base64[3]]; Base64 += 4;
-			if (padding)
-				o[0] = tmp.v0;
-			if (padding == 1)
-				o[1] = tmp.v1;
+			tmp.v32 = 0;
+			for (int i = 0; inCur<sz; inCur++, i++) {
+				tmp.v32 |= (b64Url2decLut[unsigned char(Base64[inCur])] << (18 - i * 6));
+			}
+			for (int i = 0; outCur<outsize; outCur++, i++) {
+				ret[outCur] = tmp.a4[2-i];
+			}
 			return ret;
 		}
 		std::vector<unsigned char> Base64Url(const std::wstring& base64) {
