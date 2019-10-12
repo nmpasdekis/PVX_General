@@ -1,7 +1,6 @@
 #include<PVX_json.h>
 #include<PVX_Encode.h>
 #include<sstream>
-//#include<pvx_algorithm.inl>
 #include<regex>
 #include <PVX_Regex.h>
 #include <stdio.h>
@@ -141,8 +140,6 @@ namespace PVX {
 		Item::Item(const nullptr_t&) : Type{ jsElementType::Null }, NumericFloat{ 0 }, _Integer{ 0 } {}
 		Item::Item(const std::string & s) : Type{ jsElementType::String }, NumericFloat{ 0 }, _Integer{ 0 } { for (auto c : s) String.push_back(c); }
 		Item::Item(const char * str) : Type{ jsElementType::String }, NumericFloat{ 0 }, _Integer{ 0 } { int i = 0; while (str[i]) String.push_back(str[i++]); }
-		//Item::Item(const Item & obj) : Type{ obj.Type }, NumericFloat{ obj.NumericFloat }, _Integer{ obj._Integer }, String{ obj.String }, Object{ obj.Object }, Array{ obj.Array }{}
-
 
 
 		static std::wstring wstr(const std::string & str) {
@@ -151,58 +148,11 @@ namespace PVX {
 			return ret;
 		}
 
-		Item::Item(const std::initializer_list<Tuple> & its) {
-			Type = JSON::jsElementType::Object;
-			for (auto & it : its) {
-				Object[it.Name] = it._Item;
-			}
-		}
-		//Item::Item(const std::map<std::wstring, std::wstring> & Dictionary) {
-		//	for (auto & d : Dictionary)
-		//		Object[d.first] = d.second;
-		//}
-		//Item::Item(const std::map<std::wstring, double> & Dictionary) {
-		//	for (auto & d : Dictionary)
-		//		Object[d.first] = d.second;
-		//}
-		//Item::Item(const std::map<std::wstring, float> & Dictionary) {
-		//	for (auto & d : Dictionary)
-		//		Object[d.first] = d.second;
-		//}
-		//Item::Item(const std::map<std::wstring, int> & Dictionary) {
-		//	for (auto & d : Dictionary)
-		//		Object[d.first] = d.second;
-		//}
-		//Item::Item(const std::map<std::string, std::wstring> & Dictionary) {
-		//	for (auto & d : Dictionary)
-		//		Object[wstr(d.first)] = d.second;
-		//}
-		//Item::Item(const std::map<std::string, std::string> & Dictionary) {
-		//	for (auto & d : Dictionary)
-		//		Object[wstr(d.first)] = d.second;
-		//}
-		//Item::Item(const std::map<std::wstring, std::string> & Dictionary) {
-		//	for (auto & d : Dictionary)
-		//		Object[d.first] = d.second;
-		//}
-		//Item::Item(const std::map<std::wstring, Item> & Dictionary) {
-		//	for (auto & d : Dictionary)
-		//		Object[d.first] = d.second;
-		//}
-
-		Item::Item(const array & its) {
-			Type = JSON::jsElementType::Array;
+		Item::Item(const jsArray& its) : Type{ JSON::jsElementType::Array } {
 			for (auto & it : its.itms) {
 				Array.push_back(it);
 			}		
 		}
-
-		//Item::Item(const std::initializer_list<Item>& its) {
-		//	Type = JSON::jsElementType::Array;
-		//	for (auto & it : its) {
-		//		Array.push_back(it);
-		//	}
-		//}
 
 		Item::~Item() {
 			Release();
@@ -488,7 +438,6 @@ namespace PVX {
 		Item Item::sort(std::function<int(Item&, Item&)> Compare) {
 			if (Type == JSON::jsElementType::Array) {
 				Item ret = Copy();
-				//PVX::Algorithm::qsort<Item>(ret.Array.data(), ret.Array.size(), Compare);
 				std::sort(ret.Array.begin(), ret.Array.end(), Compare);
 				return ret;
 			}
@@ -721,8 +670,6 @@ namespace PVX {
 				return -1;
 			};
 			auto[tmp, Strings] = RemoveStrings(Json);
-			//std::vector<std::wstring> Strings = PVX::regex_matches<std::wstring>(Json, jsonObjectStrings, [](const std::wsmatch & m) { return PVX::Decode::Unescape(m[1].str()); });
-			//auto tmp = std::regex_replace(Json, jsonObjectStrings, L"\"");
 			std::vector<double> Doubles = PVX::regex_matches<double>(tmp, jsonFloats, [](const std::wsmatch & m) { return _wtof(m.str().c_str()); });
 			tmp = std::regex_replace(tmp, jsonFloats, L"f");
 			std::vector<int> Integers = PVX::regex_matches<int>(tmp, jsonInts, [](const std::wsmatch & m) { return _wtoi(m.str().c_str()); });
@@ -804,7 +751,6 @@ namespace PVX {
 					} else {
 						if (Stack2.size()) {
 							if (s.op == '{') {
-								//s.val = jsElementType::Object;
 								if (!s.Empty) {
 									MakeObject(s.val, Stack2.back());
 									Stack2.back() = s;
@@ -812,7 +758,6 @@ namespace PVX {
 									Stack2.push_back(s);
 								continue;
 							} else {
-								//s.val = jsElementType::Array;
 								if (!s.Empty) {
 									MakeArray(s.val, Stack2.back());
 									Stack2.back() = s;

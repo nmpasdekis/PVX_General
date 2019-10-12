@@ -12,7 +12,11 @@ namespace PVX{
 		std::string ToString(const std::wstring & data);
 		std::wstring ToString(const std::string & data);
 		std::string Base64(const void * data, int size);
-		std::string Base64(const std::vector<unsigned char> & data);
+		std::string Base64(const std::vector<unsigned char>& data);
+		template<int Size>
+		inline std::string Base64(const std::array<unsigned char, Size>& data) {
+			return Base64(data.data(), Size);
+		}
 		std::string Base64Url(const void* data, int size, bool NoPadding = false);
 		template<typename T>
 		inline std::string Base64Url(const T& data, bool NoPadding = false) { return Base64Url(data.data(), data.size(), NoPadding); }

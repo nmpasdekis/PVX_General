@@ -26,16 +26,15 @@ namespace PVX {
 			True
 		};
 		
-		class Tuple;
-		class array;
+		class jsArray;
 
 		class Item {
 		public:
 			~Item();
 			Item();
 
-			Item(const std::initializer_list<Tuple> & its);
-			Item(const array & its);
+			//Item(const std::initializer_list<Tuple> & its);
+			Item(const jsArray& its);
 			Item(const enum class jsElementType&);
 			Item(const int&);
 			Item(const long long&);
@@ -70,6 +69,15 @@ namespace PVX {
 				for (auto & i : v) Array.push_back((JSON::Item)i);
 			}
 
+			inline Item(const std::initializer_list<std::tuple<std::wstring, Item>>& dict) : Type{ JSON::jsElementType::Object } {
+				for (auto& [n, v] : dict) Object[n] = v;
+			}
+
+			//template<typename T>
+			//inline Item(const std::initializer_list<Item>& v) : Type{ JSON::jsElementType::Array } {
+			//	for (auto& i : v) Array.push_back(Item{ i });
+			//}
+
 
 			Item & operator=(const enum jsElementType);
 			Item & operator=(const int);
@@ -102,7 +110,7 @@ namespace PVX {
 			int IsEmpty();
 
 			jsElementType Type;
-			int NumericFloat;
+			int NumericFloat = 0;
 			std::vector<std::wstring> Keys() const;
 			std::vector<PVX::JSON::Item> Values() const;
 
@@ -111,11 +119,11 @@ namespace PVX {
 			std::wstring GetString() const;
 
 			long long & Integer() { return _Integer; };
-			bool Boolean() { return !!_Integer; };
-			double & Double() { return _Double; };
-
 			long long Integer() const { return NumericFloat? (long long)_Double: _Integer; };
+			double & Double() { return _Double; };
 			double Double() const { return NumericFloat ? _Double : _Integer; };
+			bool Boolean() const { return !!_Integer; };
+
 			std::vector<unsigned char> Data();
 			void Data(const std::vector<unsigned char> & d);
 
@@ -150,7 +158,7 @@ namespace PVX {
 			std::map<std::wstring, Item> Object;
 		private:
 			union {
-				long long _Integer;
+				long long _Integer = 0;
 				double _Double;
 			};
 			void WriteBin(void *);
@@ -159,22 +167,12 @@ namespace PVX {
 			Item * cache = nullptr;
 		};
 
-		class Tuple {
+		class jsArray {
 		protected:
-			friend class Item;
-			std::wstring Name;
-			Item _Item;
-		public:
-			Tuple(const std::wstring & Name, const Item & item): Name{ Name }, _Item(item) {};
-			Tuple(const std::wstring & Name, const char* item): Name{ Name }, _Item(item) {};
-		};
-
-		class array {
-		protected:
-			std::vector<Item> itms;
+			const std::initializer_list<Item> &itms;
 			friend class Item;
 		public:
-			array(const std::initializer_list<Item> & itm) : itms{itm}{}
+			jsArray(const std::initializer_list<Item> & itm) : itms{ itm } {}
 		};
 
 		std::wstring stringify(const Item& Object, bool Format = false);
