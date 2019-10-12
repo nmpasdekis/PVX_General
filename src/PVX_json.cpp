@@ -528,13 +528,13 @@ namespace PVX {
 			return *this;
 		}
 
-		std::wstring lvl(int l) {
+		std::wstring _lvl(int l) {
 			return L"\n" + std::wstring(l, L'\t');
 		}
 		
 		std::wstring stringify(const Item& obj, int level, bool Format) {
-			std::wstring Lvl = Format? lvl(level): L"";
-			std::wstring Lvl1 = Format ? lvl(level + 1): L"";
+			std::wstring Lvl = Format? _lvl(level): L"";
+			std::wstring Lvl1 = Format ? _lvl(level + 1): L"";
 			std::wstring colon = Format ? L": " : L":";
 
 			std::wstringstream ret;
@@ -576,13 +576,13 @@ namespace PVX {
 					while (iter!=obj.Object.end() && iter->second.Type == jsElementType::Undefined) iter++;
 
 					if (iter != obj.Object.end()) {
-						ret << Lvl1 << JsonString(iter->first) << colon << stringify(iter->second, level + 1);
+						ret << Lvl1 << JsonString(iter->first) << colon << stringify(iter->second, level + 1, Format);
 						++iter;
 					}
 
 					for (; iter != obj.Object.end(); ++iter) {
 						if (iter->second.Type != jsElementType::Undefined)
-							ret << "," << Lvl1 << JsonString(iter->first) << colon << stringify(iter->second, level + 1);
+							ret << "," << Lvl1 << JsonString(iter->first) << colon << stringify(iter->second, level + 1, Format);
 					}
 
 					ret << Lvl << "}";
