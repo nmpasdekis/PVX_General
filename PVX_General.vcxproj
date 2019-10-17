@@ -95,6 +95,8 @@
     <ClInclude Include="include\PVX_Encrypt.h" />
     <ClInclude Include="include\PVX_File.h" />
     <ClInclude Include="include\PVX_json.h" />
+    <ClInclude Include="include\PVX_Math3D_Eigen.h" />
+    <ClInclude Include="include\PVX_Math3D.h" />
     <ClInclude Include="include\PVX_Regex.h" />
     <ClInclude Include="include\PVX_String.h" />
     <ClInclude Include="include\PVX_Threading.h" />

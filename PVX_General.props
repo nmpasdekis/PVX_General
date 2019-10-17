@@ -4,6 +4,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <IncludePath>D:\GitProjects2020\Repos\PVX_General\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\GitProjects2020\Repos\PVX_General\x64\$(Configuration);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <Link>

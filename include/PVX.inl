@@ -239,46 +239,6 @@ namespace PVX {
 			src += SrcStride;
 		}
 	}
-
-	template<typename T>
-	struct Vector : public std::vector<T> {
-		template<typename T2>
-		auto map(T2 clb) {
-			Vector<decltype(clb((*this)[0]))> ret;
-			ret.reserve(std::vector<T>::size());
-			std::transform(std::vector<T>::begin(), std::vector<T>::end(), std::back_inserter(ret), clb);
-			return std::move(ret);
-		}
-		template<typename T1, typename T2>
-		auto map(T2 clb) {
-			Vector<T1> ret;
-			ret.reserve(std::vector<T>::size());
-			for (auto& x: (*this)) ret.emplace_back(clb(x));
-			return std::move(ret);
-		}
-		
-		inline auto filter(std::function<bool(const T&)> clb) const {
-			Vector<T> ret;
-			ret.reserve(std::vector<T>::size());
-			for (auto& x: (*this)) if(clb(x)) 
-				ret.push_back(x);
-			//ret.shrink_to_fit();
-			return std::move(ret);
-		}
-		inline void forEach(std::function<void(T&)> clb) {
-			std::for_each(std::vector<T>::begin(), std::vector<T>::end(), clb);
-		}
-		inline void forEach_Parallel(std::function<void(T&)> clb) {
-			std::for_each(std::execution::par, std::vector<T>::begin(), std::vector<T>::end(), clb);
-		}
-
-
-		template<typename ...Params>
-		explicit Vector(Params && ... param) {
-			std::vector<T>::reserve(sizeof...(param));
-			(std::vector<T>::emplace_back(std::forward<Params>(param)), ...);
-		}
-	};
 }
 
 #endif

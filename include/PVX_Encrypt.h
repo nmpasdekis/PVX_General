@@ -4,6 +4,19 @@
 #include <type_traits>
 
 namespace PVX::Encrypt {
+	class CRC32_Algorithm {
+		unsigned int CRC32 = 0;
+	public:
+		enum{ BlockSize = 4, OutputSize = 4, Cycles = 1 };
+		CRC32_Algorithm& Update(const void* Message, size_t MessageSize);
+		std::array<unsigned char, 4> operator()();
+		unsigned int Get() { return CRC32; }
+		template<typename T>
+		CRC32_Algorithm& Update(const T& Message) {
+			return Update(Message.data(), Message.size());
+		}
+	};
+
 	class SHA1_Algorithm {
 	private:
 		unsigned int h0 = 0x67452301;
