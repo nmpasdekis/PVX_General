@@ -74,6 +74,9 @@ namespace PVX{
 		unsigned int dWord;
 	};
 	union Vector2D {
+		//Vector2D() :x{ 0 }, y{ 0 }{}
+		Vector2D() = default;
+		Vector2D(float x, float y) : x{ x }, y{ y } {}
 		struct {
 			float x, y;
 		};
@@ -93,6 +96,9 @@ namespace PVX{
 		inline float Cross(const Vector2D& v2) { return x*v2.y - y*v2.x; }
 	};
 	union Vector3D {
+		Vector3D() = default;
+		//Vector3D() : x{ 0 }, y{ 0 }, z{ 0 } {}
+		Vector3D(float x, float y, float z) : x{ x }, y{ y }, z{ z } {}
 		struct {
 			float x, y, z;
 		};
@@ -104,6 +110,9 @@ namespace PVX{
 		} BGR;
 		struct {
 			float Pitch, Yaw, Roll;
+		};
+		struct {
+			float H, L, S;
 		};
 		struct {
 			float Width, Height, Depth;
@@ -119,6 +128,9 @@ namespace PVX{
 	};
 	__declspec(align(16))
 	union Vector4D {
+		Vector4D() = default;
+		//Vector4D() : x{ 0 }, y{ 0 }, z{ 0 }, w{ 0 } {}
+		Vector4D(float x, float y, float z, float w) : x{ x }, y{ y }, z{ z }, w{ w } {}
 		struct {
 			float x, y, z, w;
 		};
@@ -257,6 +269,7 @@ namespace PVX{
 
 	#pragma warning(disable:4201)
 	union Matrix4x4 {
+		Matrix4x4() = default;
 		float m[4][4];
 		float m16[16];
 		struct {
@@ -1201,27 +1214,19 @@ namespace PVX{
 	}
 
 	inline Vector3D operator+(const Vector3D& v1, const Vector3D& v2) {
-		Vector3D out = v1;
-		out.x += v2.x;
-		out.y += v2.y;
-		out.z += v2.z;
-		return out;
+		return { v1.x + v2.x, v1.y + v2.y, v1.z + v2.z };
 	}
 
 	inline Vector3D operator-(const Vector3D& v1, const Vector3D& v2) {
-		Vector3D out = v1;
-		out.x -= v2.x;
-		out.y -= v2.y;
-		out.z -= v2.z;
-		return out;
+		return { v1.x - v2.x, v1.y - v2.y, v1.z - v2.z };
 	}
 
 	inline Vector3D operator*(const Vector3D& v1, const Vector3D& v2) {
-		Vector3D out = v1;
-		out.x *= v2.x;
-		out.y *= v2.y;
-		out.z *= v2.z;
-		return out;
+		return { v1.x * v2.x, v1.y * v2.y, v1.z * v2.z };
+	}
+
+	inline Vector3D operator/(const Vector3D& v1, const Vector3D& v2) {
+		return { v1.x / v2.x, v1.y / v2.y, v1.z / v2.z };
 	}
 
 	inline Vector3D operator*(const Vector3D& v1, float f) {

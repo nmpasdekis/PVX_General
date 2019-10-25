@@ -39,6 +39,9 @@
     <ClCompile Include="src\PVX_Encrypt.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\PVX_Image.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\PVX.inl">
@@ -86,6 +89,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\PVX_Math3D_Eigen.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\PVX_Image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

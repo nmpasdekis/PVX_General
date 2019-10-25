@@ -43,10 +43,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)include;D:\GitProjects2020\Repos\External\Modules\eigen-eigen-323c052e1731;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)include;D:\GitProjects2020\Repos\External\Modules\eigen-eigen-323c052e1731;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -80,6 +80,7 @@
     <ClCompile Include="src\PVX_Deflate.cpp" />
     <ClCompile Include="src\PVX_Encode.cpp" />
     <ClCompile Include="src\PVX_File.cpp" />
+    <ClCompile Include="src\PVX_Image.cpp" />
     <ClCompile Include="src\PVX_json.cpp" />
     <ClCompile Include="src\PVX_Encrypt.cpp" />
     <ClCompile Include="src\PVX_String.cpp" />
@@ -94,6 +95,7 @@
     <ClInclude Include="include\PVX_Encode.h" />
     <ClInclude Include="include\PVX_Encrypt.h" />
     <ClInclude Include="include\PVX_File.h" />
+    <ClInclude Include="include\PVX_Image.h" />
     <ClInclude Include="include\PVX_json.h" />
     <ClInclude Include="include\PVX_Math3D_Eigen.h" />
     <ClInclude Include="include\PVX_Math3D.h" />

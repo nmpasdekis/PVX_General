@@ -8,6 +8,13 @@ using namespace std;
 
 namespace PVX{
 	namespace String{
+		std::string Join(const std::vector<std::string> & List, const std::string & separator) {
+			std::stringstream ret;
+			ret << List[0];
+			for(auto i = 1; i < List.size(); i++)
+				ret << separator << List[i];
+			return ret.str();
+		}
 		vector<string> Split(const string & Text, const string & Separator) {
 			vector<string> ret;
 			size_t ssz = Separator.size(), last = 0;
@@ -22,57 +29,32 @@ namespace PVX{
 				ret.push_back(Text.substr(last, Text.size() - last));
 			return ret;
 		}
-		std::string Join(const std::vector<std::string> & List, const std::string & separator) {
-			std::stringstream ret;
-			ret << List[0];
-			for(auto i = 1; i < List.size(); i++)
-				ret << separator << List[i];
-			return ret.str();
-		}
-
 		vector<string> Split_No_Empties(const string & Text, const string & Separator) {
 			vector<string> ret;
-			size_t ssz = Separator.size(), last = 0;
-			int start = 0;
-			while (-1 != (start = Text.find(Separator, start))) {
-				if (((unsigned int)start) > last)
-					ret.push_back(Text.substr(last, start - last));
-				start += ssz;
-				last = start;
-			}
-			if (last < Text.size())
-				ret.push_back(Text.substr(last, Text.size() - last));
-			return ret;
-		}
-		vector<wstring> Split_No_Empties(const wstring & Text, const wstring & Separator){
-			vector<wstring> ret;
-			size_t ssz = Separator.size(), last=0;
-			int start=0;
-			while (-1 != (start=Text.find(Separator, start))){
-				if (((unsigned int)start) > last)
-					ret.push_back(Text.substr(last, start - last));
-				start+=ssz;
-				last = start;
-			}
-			if (last < Text.size())
-				ret.push_back(Text.substr(last, Text.size() - last));
+			OnSplit(Text, Separator, [&ret](const std::string& w) {
+				if (w.size())
+					ret.push_back(w);
+			});
 			return ret;
 		}
 
 		vector<string> Split_No_Empties_Trimed(const string & Text, const string & Separator) {
-			return PVX::Map(Split_No_Empties(Text, Separator), [](const std::string & w) { return Trim(w); });
-		}
-		vector<wstring> Split_No_Empties_Trimed(const wstring & Text, const wstring & Separator) {
-			return PVX::Map(Split_No_Empties(Text, Separator), [](const std::wstring & w) { return Trim(w); });
+			std::vector<std::string> ret;
+			OnSplit(Text, Separator, [&ret](const std::string& w) {
+				auto t = Trim(w);
+				if (t.size())
+					ret.push_back(t);
+			});
+			return ret;
 		}
 
 		vector<string> Split_Trimed(const string & Text, const string & Separator) {
-			return PVX::Map(Split(Text, Separator), [](const std::string & w) { return Trim(w); });
+			std::vector<std::string> ret;
+			OnSplit(Text, Separator, [&ret](const std::string& w) {
+				ret.push_back(Trim(w));
+			});
+			return ret;
 		}
-		vector<wstring> Split_Trimed(const wstring & Text, const wstring & Separator) {
-			return PVX::Map(Split(Text, Separator), [](const std::wstring & w) { return Trim(w); });
-		}
-
 
 		vector<wstring> Split(const wstring & Text, const wstring & Separator) {
 			vector<wstring> ret;
@@ -87,6 +69,33 @@ namespace PVX{
 			if(last <= Text.size())
 				ret.push_back(Text.substr(last, Text.size() - last));
 			return ret;
+		}
+		vector<wstring> Split_No_Empties(const wstring& Text, const wstring& Separator) {
+			std::vector<std::wstring> ret;
+			OnSplit(Text, Separator, [&ret](const std::wstring& w) {
+				if (w.size())
+					ret.push_back(w);
+			});
+			return ret;
+		}
+		vector<wstring> Split_No_Empties_Trimed(const wstring & Text, const wstring & Separator) {
+			std::vector<std::wstring> ret;
+			OnSplit(Text, Separator, [&ret](const std::wstring& w) {
+				auto t = Trim(w);
+				if (t.size())
+					ret.push_back(t);
+			});
+			return ret;
+			//return PVX::Filter(PVX::Map(Split(Text, Separator), [](const std::wstring& w) { return Trim(w); }), [](const std::wstring& w) { return w.size(); });
+		}
+		vector<wstring> Split_Trimed(const wstring & Text, const wstring & Separator) {
+			std::vector<std::wstring> ret;
+			OnSplit(Text, Separator, [&ret](const std::wstring& w) {
+				ret.push_back(Trim(w));
+			});
+			return ret;
+
+			//return PVX::Map(Split(Text, Separator), [](const std::wstring & w) { return Trim(w); });
 		}
 
 		std::pair<std::string, std::string> Split2(const std::string& Text, const std::string& Separator) {
@@ -128,13 +137,13 @@ namespace PVX{
 		string Trim(const string & s) {
 			int start, end;
 			for(start = 0; s[start] && (s[start] == ' ' || s[start] == '\t' || s[start] == '\n' || s[start] == '\r'); start++);
-			for(end = s.size() - 1; end >= 0 && (s[end] == ' ' || s[end] == '\t' || s[end] == '\n' || s[start] == '\r'); end--);
+			for(end = s.size() - 1; end >= 0 && (s[end] == ' ' || s[end] == '\t' || s[end] == '\n' || s[end] == '\r'); end--);
 			return s.substr(start, end - start + 1);
 		}
 		wstring Trim(const wstring & s) {
 			int start, end;
 			for(start = 0; s[start] && (s[start] == L' ' || s[start] == L'\t' || s[start] == L'\n' || s[start] == L'\r'); start++);
-			for(end = s.size() - 1; end >= 0 && (s[end] == L' ' || s[end] == L'\t' || s[end] == L'\n' || s[start] == L'\r'); end--);
+			for(end = s.size() - 1; end >= 0 && (s[end] == L' ' || s[end] == L'\t' || s[end] == L'\n' || s[end] == L'\r'); end--);
 			return s.substr(start, end - start + 1);
 		}
 

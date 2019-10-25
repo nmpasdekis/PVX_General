@@ -8,6 +8,7 @@
 #include <initializer_list>
 #include <set>
 #include <algorithm>
+#include <future>
 #include <execution>
 
 namespace PVX {
@@ -162,16 +163,46 @@ namespace PVX {
 
 	template<typename T1, typename T2>
 	inline auto Map(const std::vector<T1> & Array, T2 fnc) {
-		std::vector<decltype(fnc(Array[0]))> ret(Array.size());
-		std::transform(Array.begin(), Array.end(), ret.begin(), fnc);
+		std::vector<decltype(fnc(Array[0]))> ret;
+		ret.reserve(Array.size());
+		std::transform(Array.begin(), Array.end(), std::back_insert_iterator(ret), fnc);
 		return std::move(ret);
 	}
 	template<typename T1, typename T2, typename T>
 	auto Map(const std::vector<T>& Array, T2 clb) {
 		std::vector<T1> ret;
 		ret.reserve(Array.size());
-		for (auto& x: (*this)) ret.emplace_back(clb(x));
+		for (auto& x: Array) ret.emplace_back(clb(x));
 		return std::move(ret);
+	}
+
+	template<typename T1, typename T2>
+	inline auto Map_Parallel2(const std::vector<T1>& Array, T2 fnc) {
+		using returnType = decltype(fnc(Array[0]));
+
+		std::vector<returnType> ret(Array.size());
+		std::for_each(std::execution::par, Array.begin(), Array.end(), [&ret, &Array, fnc](const T1& it) {
+			auto Index = &it - Array.data();
+			ret[Index] = fnc(it);
+		});
+		return ret;
+	}
+
+	template<typename T1, typename T2>
+	inline auto Map_Parallel(const std::vector<T1>& Array, T2 fnc) {
+		using returnType = decltype(fnc(Array[0]));
+
+		std::vector<std::future<returnType>> promises;
+		promises.reserve(Array.size());
+		for (auto& it : Array) {
+			promises.push_back(std::async(std::launch::async, fnc, it));
+		}
+		std::vector<returnType> ret;
+		ret.reserve(Array.size());
+		for (auto& p : promises) {
+			ret.push_back(p.get());
+		}
+		return ret;
 	}
 
 	template<typename T1, typename T2>
@@ -238,6 +269,11 @@ namespace PVX {
 			dst += DestStride;
 			src += SrcStride;
 		}
+	}
+	inline void Append(std::vector<unsigned char>& Array, const unsigned char* more, size_t moreSize) {
+		auto sz = Array.size();
+		Array.resize(sz + moreSize);
+		memcpy(Array.data() + sz, more, moreSize);
 	}
 }
 

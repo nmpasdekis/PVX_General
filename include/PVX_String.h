@@ -8,6 +8,32 @@
 
 namespace PVX{
 	namespace String{
+		inline void OnSplit(const std::string& Text, const std::string& Separator, std::function<void(const std::string&)> clb) {
+			size_t ssz = Separator.size(), last = 0;
+			int start = 0;
+			while (-1 != (start = Text.find(Separator, start))) {
+				if (((unsigned int)start) >= last)
+					clb(Text.substr(last, start - last));
+				start += ssz;
+				last = start;
+			}
+			if (last <= Text.size())
+				clb(Text.substr(last, Text.size() - last));
+		}
+
+		inline void OnSplit(const std::wstring& Text, const std::wstring& Separator, std::function<void(const std::wstring&)> clb) {
+			size_t ssz = Separator.size(), last = 0;
+			int start = 0;
+			while (-1 != (start = Text.find(Separator, start))) {
+				if (((unsigned int)start) >= last)
+					clb(Text.substr(last, start - last));
+				start += ssz;
+				last = start;
+			}
+			if (last <= Text.size())
+				clb(Text.substr(last, Text.size() - last));
+		}
+
 		std::vector<std::string> Split(const std::string & Text, const std::string & Separator);
 		std::vector<std::wstring> Split(const std::wstring & Text, const std::wstring & Separator);
 		std::vector<std::string> Split_Trimed(const std::string & Text, const std::string & Separator);

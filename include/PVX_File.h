@@ -8,6 +8,8 @@
 #include<thread>
 #include<functional>
 #include<mutex>
+#include<fstream>
+#include <PVX_Encode.h>
 
 namespace PVX {
 	namespace IO {
@@ -102,6 +104,46 @@ namespace PVX {
 				return ret;
 			}
 		};
+
+		inline void ReadLines(const std::string& Filename, std::function<void(const std::string&)> clb) {
+			std::ifstream fin(Filename);
+			if (fin.fail())return;
+			std::string line;
+			while (!fin.eof()) {
+				std::getline(fin, line);
+				clb(line);
+			}
+		}
+
+		inline void ReadLines(const std::wstring& Filename, std::function<void(const std::string&)> clb) {
+			std::ifstream fin(Filename);
+			if (fin.fail())return;
+			std::string line;
+			while (!fin.eof()) {
+				std::getline(fin, line);
+				clb(line);
+			}
+		}
+
+		inline void ReadLinesUTF(const std::string& Filename, std::function<void(const std::wstring&)> clb) {
+			std::ifstream fin(Filename);
+			if (fin.fail())return;
+			std::string line;
+			while (!fin.eof()) {
+				std::getline(fin, line);
+				clb(PVX::Decode::UTF((unsigned char*)line.c_str(), line.size()));
+			}
+		}
+
+		inline void ReadLinesUTF(const std::wstring& Filename, std::function<void(const std::wstring&)> clb) {
+			std::ifstream fin(Filename);
+			if (fin.fail())return;
+			std::string line;
+			while (!fin.eof()) {
+				std::getline(fin, line);
+				clb(PVX::Decode::UTF((unsigned char*)line.c_str(), line.size()));
+			}
+		}
 
 		size_t FileSize(FILE * fin);
 		size_t FileSize(const std::string & filename);
