@@ -91,6 +91,7 @@
     <None Include="include\PVX.inl" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\PVX_Animation.h" />
     <ClInclude Include="include\PVX_Deflate.h" />
     <ClInclude Include="include\PVX_Encode.h" />
     <ClInclude Include="include\PVX_Encrypt.h" />
@@ -99,6 +100,7 @@
     <ClInclude Include="include\PVX_json.h" />
     <ClInclude Include="include\PVX_Math3D_Eigen.h" />
     <ClInclude Include="include\PVX_Math3D.h" />
+    <ClInclude Include="include\PVX_Reflect.h" />
     <ClInclude Include="include\PVX_Regex.h" />
     <ClInclude Include="include\PVX_String.h" />
     <ClInclude Include="include\PVX_Threading.h" />

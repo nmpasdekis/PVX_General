@@ -1,10 +1,11 @@
 #pragma once
 #include <xmmintrin.h>
 #include <cmath>
+#include <utility>
 
-namespace PVX{
+namespace PVX {
 	constexpr double PI = 3.14159265358979323846;
-	#pragma intrinsic(sinf, cosf)
+#pragma intrinsic(sinf, cosf)
 
 	constexpr float ToRAD(float x) { return ((float)(x*PI/180.0)); }
 	constexpr float ToDEGREES(float x) { return ((float)(x*180.0/PI)); }
@@ -74,6 +75,12 @@ namespace PVX{
 		unsigned int dWord;
 	};
 	union Vector2D {
+		enum Traits {
+			HasX = true,
+			HasY = true,
+			HasZ = false,
+			HasW = false
+		};
 		//Vector2D() :x{ 0 }, y{ 0 }{}
 		Vector2D() = default;
 		Vector2D(float x, float y) : x{ x }, y{ y } {}
@@ -96,6 +103,12 @@ namespace PVX{
 		inline float Cross(const Vector2D& v2) { return x*v2.y - y*v2.x; }
 	};
 	union Vector3D {
+		enum Traits {
+			HasX = true,
+			HasY = true,
+			HasZ = true,
+			HasW = false
+		};
 		Vector3D() = default;
 		//Vector3D() : x{ 0 }, y{ 0 }, z{ 0 } {}
 		Vector3D(float x, float y, float z) : x{ x }, y{ y }, z{ z } {}
@@ -127,7 +140,13 @@ namespace PVX{
 		inline Vector3D Cross(const Vector3D& v) const { return { y* v.z - z*v.y, v.x* z - v.z*x, x* v.y - y*v.x }; }
 	};
 	__declspec(align(16))
-	union Vector4D {
+		union Vector4D {
+		enum Traits {
+			HasX = true,
+			HasY = true,
+			HasZ = true,
+			HasW = true
+		};
 		Vector4D() = default;
 		//Vector4D() : x{ 0 }, y{ 0 }, z{ 0 }, w{ 0 } {}
 		Vector4D(float x, float y, float z, float w) : x{ x }, y{ y }, z{ z }, w{ w } {}
@@ -185,7 +204,7 @@ namespace PVX{
 		inline iVector3D operator-() const { return iVector3D{ -x, -y, -z }; }
 	};
 	__declspec(align(16))
-	union iVector4D {
+		union iVector4D {
 		struct {
 			int x, y, z, w;
 		};
@@ -267,7 +286,7 @@ namespace PVX{
 		}
 	};
 
-	#pragma warning(disable:4201)
+#pragma warning(disable:4201)
 	union Matrix4x4 {
 		Matrix4x4() = default;
 		float m[4][4];
@@ -289,6 +308,30 @@ namespace PVX{
 				0, 0, 1.0f, 0,
 				0, 0, 0, 1.0f
 			};
+		}
+		template<typename T, typename std::enable_if_t<T::Traits::HasZ, int> = 0>
+		inline void TranslateBefore(const T& p) {
+			m30 = -p.x * m00 + p.y * m10 + p.z * m20;
+			m31 = -p.x * m01 + p.y * m11 + p.z * m21;
+			m32 = -p.x * m02 + p.y * m12 + p.z * m22;
+		}
+		template<typename T, typename std::enable_if_t<T::Traits::HasZ, int> = 0>
+		inline void MatStoreX(const T& vec){
+			m00=(vec).x;
+			m10=(vec).y;
+			m20=(vec).z;
+		}
+		template<typename T, typename std::enable_if_t<T::Traits::HasZ, int> = 0>
+		inline void MatStoreY(const T& vec) {
+			m01 = (vec).x;
+			m11 = (vec).y;
+			m21 = (vec).z;
+		}
+		template<typename T, typename std::enable_if_t<T::Traits::HasZ, int> = 0>
+		inline void MatStoreZ(const T& vec) {
+			m02 = (vec).x;
+			m12 = (vec).y;
+			m22 = (vec).z;
 		}
 	};
 	union Matrix3x3 {
@@ -387,32 +430,32 @@ namespace PVX{
 
 
 
-	#define DET3(m00, m01, m02, m10, m11, m12, m20, m21, m22) \
+#define DET3(m00, m01, m02, m10, m11, m12, m20, m21, m22) \
 		(\
 		((m00)*((m11)*(m22)-(m21)*(m12))) - \
 		((m01)*((m10)*(m22)-(m20)*(m12))) + \
 		((m02)*((m10)*(m21)-(m20)*(m11))) \
 		)
 
-	#define DET4_00(m) DET3(\
+#define DET4_00(m) DET3(\
 		/*(m).m00,   (m).m01, (m).m02, (m).m03,*/	\
 		/*(m).m10,*/ (m).m11, (m).m12, (m).m13,	\
 		/*(m).m20,*/ (m).m21, (m).m22, (m).m23,	\
 		/*(m).m30,*/ (m).m31, (m).m32, (m).m33	\
 		)
-	#define DET4_01(m) DET3(\
+#define DET4_01(m) DET3(\
 		/*(m).m00, (m).m01, (m).m02, (m).m03,*/	\
 		(m).m10, /*(m).m11,*/ (m).m12, (m).m13,	\
 		(m).m20, /*(m).m21,*/ (m).m22, (m).m23,	\
 		(m).m30, /*(m).m31,*/ (m).m32, (m).m33	\
 		)
-	#define DET4_02(m) DET3(\
+#define DET4_02(m) DET3(\
 		/*(m).m00, (m).m01, (m).m02, (m).m03,*/	\
 		(m).m10, (m).m11, /*(m).m12,*/ (m).m13,	\
 		(m).m20, (m).m21, /*(m).m22,*/ (m).m23,	\
 		(m).m30, (m).m31, /*(m).m32,*/ (m).m33	\
 		)
-	#define DET4_03(m) DET3(\
+#define DET4_03(m) DET3(\
 		/*(m).m00, (m).m01, (m).m02, (m).m03,*/	\
 		(m).m10, (m).m11, (m).m12, /*(m).m13,*/	\
 		(m).m20, (m).m21, (m).m22, /*(m).m23,*/	\
@@ -420,82 +463,82 @@ namespace PVX{
 		)
 
 
-	#define DET4_10(m) DET3(\
+#define DET4_10(m) DET3(\
 		/*(m).m00,*/ (m).m01, (m).m02, (m).m03,	\
 		/*(m).m10,   (m).m11, (m).m12, (m).m13,*/\
 		/*(m).m20,*/ (m).m21, (m).m22, (m).m23,	\
 		/*(m).m30,*/ (m).m31, (m).m32, (m).m33	\
 		)
-	#define DET4_11(m) DET3(\
+#define DET4_11(m) DET3(\
 		(m).m00, /*(m).m01,*/ (m).m02, (m).m03,	\
 		/*(m).m10, (m).m11,   (m).m12, (m).m13,*/\
 		(m).m20, /*(m).m21,*/ (m).m22, (m).m23,	\
 		(m).m30, /*(m).m31,*/ (m).m32, (m).m33	\
 		)
-	#define DET4_12(m) DET3(\
+#define DET4_12(m) DET3(\
 		(m).m00, (m).m01, /*(m).m02,*/ (m).m03,	\
 		/*(m).m10, (m).m11, (m).m12,   (m).m13,*/\
 		(m).m20, (m).m21, /*(m).m22,*/ (m).m23,	\
 		(m).m30, (m).m31, /*(m).m32,*/ (m).m33	\
 		)
-	#define DET4_13(m) DET3(\
+#define DET4_13(m) DET3(\
 		(m).m00, (m).m01, (m).m02, /*(m).m03,*/	\
 		/*(m).m10, (m).m11, (m).m12, (m).m13,*/	\
 		(m).m20, (m).m21, (m).m22, /*(m).m23,*/	\
 		(m).m30, (m).m31, (m).m32, /*(m).m33)*/	\
 		)
 
-	#define DET4_20(m) DET3(\
+#define DET4_20(m) DET3(\
 		/*(m).m00,*/ (m).m01, (m).m02, (m).m03,	\
 		/*(m).m10,*/ (m).m11, (m).m12, (m).m13,	\
 		/*(m).m20, (m).m21, (m).m22, (m).m23,*/	\
 		/*(m).m30,*/ (m).m31, (m).m32, (m).m33	\
 		)
-	#define DET4_21(m) DET3(\
+#define DET4_21(m) DET3(\
 		(m).m00, /*(m).m01,*/ (m).m02, (m).m03,	\
 		(m).m10, /*(m).m11,*/ (m).m12, (m).m13,	\
 		/*(m).m20, (m).m21, (m).m22, (m).m23,*/	\
 		(m).m30, /*(m).m31,*/ (m).m32, (m).m33	\
 		)
-	#define DET4_22(m) DET3(\
+#define DET4_22(m) DET3(\
 		(m).m00, (m).m01, /*(m).m02,*/ (m).m03,	\
 		(m).m10, (m).m11, /*(m).m12,*/ (m).m13,	\
 		/*(m).m20, (m).m21, (m).m22, (m).m23,*/	\
 		(m).m30, (m).m31, /*(m).m32,*/ (m).m33	\
 		)
-	#define DET4_23(m) DET3(\
+#define DET4_23(m) DET3(\
 		(m).m00, (m).m01, (m).m02, /*(m).m03,*/	\
 		(m).m10, (m).m11, (m).m12, /*(m).m13,*/	\
 		/*(m).m20, (m).m21, (m).m22, (m).m23,*/	\
 		(m).m30, (m).m31, (m).m32, /*(m).m33)*/	\
 		)
 
-	#define DET4_30(m) DET3(\
+#define DET4_30(m) DET3(\
 		/*(m).m00,*/ (m).m01, (m).m02, (m).m03,	\
 		/*(m).m10,*/ (m).m11, (m).m12, (m).m13,	\
 		/*(m).m20,*/ (m).m21, (m).m22, (m).m23,	\
 		/*(m).m30, (m).m31, (m).m32, (m).m33*/	\
 		)
-	#define DET4_31(m) DET3(\
+#define DET4_31(m) DET3(\
 		(m).m00, /*(m).m01,*/ (m).m02, (m).m03,	\
 		(m).m10, /*(m).m11,*/ (m).m12, (m).m13,	\
 		(m).m20, /*(m).m21,*/ (m).m22, (m).m23,	\
 		/*(m).m30, (m).m31, (m).m32, (m).m33*/	\
 		)
-	#define DET4_32(m) DET3(\
+#define DET4_32(m) DET3(\
 		(m).m00, (m).m01, /*(m).m02,*/ (m).m03,	\
 		(m).m10, (m).m11, /*(m).m12,*/ (m).m13,	\
 		(m).m20, (m).m21, /*(m).m22,*/ (m).m23,	\
 		/*(m).m30, (m).m31, (m).m32, (m).m33*/	\
 		)
-	#define DET4_33(m) DET3(\
+#define DET4_33(m) DET3(\
 		(m).m00, (m).m01, (m).m02, /*(m).m03,*/	\
 		(m).m10, (m).m11, (m).m12, /*(m).m13,*/	\
 		(m).m20, (m).m21, (m).m22, /*(m).m23,*/	\
 		/*(m).m30, (m).m31, (m).m32, (m).m33)*/	\
 		)
 
-	#define DET4(m) (\
+#define DET4(m) (\
 		(m).m00 * DET4_00(m)\
 		-(m).m01 * DET4_01(m)\
 		+(m).m02 * DET4_02(m)\
@@ -885,7 +928,7 @@ namespace PVX{
 		}
 	}
 
-	#define Det2x2(a,b,c,d) ((a)*(d)-(c)*(b))
+#define Det2x2(a,b,c,d) ((a)*(d)-(c)*(b))
 
 	inline void MatrixInv(const Matrix3x3& Mat, Matrix3x3& Inv) {
 		float idet = 1.0f / (
@@ -1394,7 +1437,7 @@ namespace PVX{
 		return out;
 	}
 
-	inline bool operator==(const Vector4D & v1, const Vector4D & v2) {
+	inline bool operator==(const Vector4D& v1, const Vector4D& v2) {
 		return((v1.x == v2.x) && (v1.y == v2.y) && (v1.z == v2.z) && (v1.w == v2.w));
 	}
 
@@ -1512,7 +1555,7 @@ namespace PVX{
 		out.m33 = 1.0f;
 	}
 
-	#define _M4x3_x_M3x3_Init(m1, m2){\
+#define _M4x3_x_M3x3_Init(m1, m2){\
 		m2.m00*m1.m00 + m2.m01*m1.m10 + m2.m02*m1.m20,\
 		m2.m00*m1.m01 + m2.m01*m1.m11 + m2.m02*m1.m21,\
 		m2.m00*m1.m02 + m2.m01*m1.m12 + m2.m02*m1.m22,\
@@ -1531,7 +1574,7 @@ namespace PVX{
 		1.0f\
 	}
 
-	#define _ScaleMatrix(mat, s){\
+#define _ScaleMatrix(mat, s){\
 		(mat).m00 *= (s).x;\
 		(mat).m01 *= (s).x;\
 		(mat).m02 *= (s).x;\
@@ -1548,13 +1591,13 @@ namespace PVX{
 		(mat).m23 *= (s).z;\
 	}
 
-	#define _TranslateMatrix(mat, p){\
+#define _TranslateMatrix(mat, p){\
 		(mat).m30+=((p).x * (mat).m00 + (p).y * (mat).m10 + (p).z * (mat).m20);\
 		(mat).m31+=((p).x * (mat).m01 + (p).y * (mat).m11 + (p).z * (mat).m21);\
 		(mat).m32+=((p).x * (mat).m02 + (p).y * (mat).m12 + (p).z * (mat).m22);\
 	}
 
-	#define _ScaleMatrix_Init(mat, s){\
+#define _ScaleMatrix_Init(mat, s){\
 		(mat).m00 * (s).x,\
 		(mat).m01 * (s).x,\
 		(mat).m02 * (s).x,\
@@ -1581,7 +1624,7 @@ namespace PVX{
 				| 0   0   1   0 |
 				| p.x p.y p.z 1 |
 	*/
-	#define _TranslateMatrix_Init(mat, p){\
+#define _TranslateMatrix_Init(mat, p){\
 		(mat).m00,\
 		(mat).m01,\
 		(mat).m02,\
@@ -1722,182 +1765,27 @@ namespace PVX{
 		return out;
 	}
 
-	#define Swap(a,b) t=a;a=b;b=t;
-
-
 	inline void MatrixTranspose(Matrix4x4& m) {
 		float t;
-		Swap(m.m01, m.m10);
-		Swap(m.m02, m.m20);
-		Swap(m.m03, m.m30);
+		std::swap(m.m01, m.m10);
+		std::swap(m.m02, m.m20);
+		std::swap(m.m03, m.m30);
 
-		Swap(m.m12, m.m21);
-		Swap(m.m13, m.m31);
+		std::swap(m.m12, m.m21);
+		std::swap(m.m13, m.m31);
 
-		Swap(m.m23, m.m32);
+		std::swap(m.m23, m.m32);
 	}
 
+		//#define MatStoreDiagonal(mat, v){\
+		//	(mat).m00=(v).x;\
+		//	(mat).m11=(v).y;\
+		//	(mat).m22=(v).z;}
 
-	#define MatStoreX(mat, vec){\
-		(mat).m00=(vec).x;\
-		(mat).m10=(vec).y;\
-		(mat).m20=(vec).z;}
-
-	#define MatStoreY(mat, vec){\
-		(mat).m01=(vec).x;\
-		(mat).m11=(vec).y;\
-		(mat).m21=(vec).z;}
-
-	#define MatStoreZ(mat, vec){\
-		(mat).m02=(vec).x;\
-		(mat).m12=(vec).y;\
-		(mat).m22=(vec).z;}
-
-	#define MatStorePos(mat, vec){\
-		(mat).m30=(vec).x;\
-		(mat).m31=(vec).y;\
-		(mat).m32=(vec).z;}
-
-	#define _MatStoreX(mat, vecx,vecy,vecz){\
-		(mat).m00=vecx;\
-		(mat).m10=vecy;\
-		(mat).m20=vecz;}
-
-	#define _MatStoreY(mat, vecx,vecy,vecz){\
-		(mat).m01=vecx;\
-		(mat).m11=vecy;\
-		(mat).m21=vecz;}
-
-	#define _MatStoreZ(mat, vecx,vecy,vecz){\
-		(mat).m02=vecx;\
-		(mat).m12=vecy;\
-		(mat).m22=vecz;}
-
-	#define _MatStorePos(mat, vecx,vecy,vecz){\
-		(mat).m30=vecx;\
-		(mat).m31=vecy;\
-		(mat).m32=vecz;}
-
-	#define MatStoreConst(mat, v){\
-		(mat).m03=(mat).m13=(mat).m23=0;\
-		(mat).m33=v;}
-
-	#define MatStoreDiagonal(mat, v){\
-		(mat).m00=(v).x;\
-		(mat).m11=(v).y;\
-		(mat).m22=(v).z;}
-
-	#define _MatStoreDiagonal(mat, x, y, z){\
-		(mat).m00=x;\
-		(mat).m11=y;\
-		(mat).m22=z;}
-
-	#define _Normalize(n) {\
-		float invLength=1.0f/Length(n);\
-		n.x*=invLength;\
-		n.y*=invLength;\
-		n.z*=invLength;\
-	}
-
-	#define _NormalizeLength(n, l) {\
-		l=Length(n);\
-		n.x/=l;\
-		n.y/=l;\
-		n.z/=l;\
-	}
-
-	#define _NormalizeQuaternion(n) {\
-		float invLength = 1.0f / sqrtf(n.i * n.i + n.j * n.j + n.k * n.k + n.r * n.r);\
-		n.i*=invLength;\
-		n.j*=invLength;\
-		n.k*=invLength;\
-		n.r*=invLength;\
-	}
-
-	#define __Normalize(nx,ny,nz) {\
-		float invLength=1.0f/_Length(nx,ny,nz);\
-		nx*=invLength;\
-		ny*=invLength;\
-		nz*=invLength;\
-	}
-
-	#define Sub(Out, a, b) {Out.x=a.x-b.x;Out.y=a.y-b.y;Out.z=a.z-b.z;}
-	#define Sub2D(Out, a, b) {Out.x=a.x-b.x;Out.y=a.y-b.y;}
-	#define SubFrom(a,b) {a.x-=b.x; a.y-=b.y; a.z-=b.z;}
-
-	#define Sadd(Out, a, b) {Out.x+=a.x-b.x;Out.y+=a.y-b.y;Out.z+=a.z-b.z;}
-
-
-	#define Add(Out, a, b) {Out.x=a.x+b.x;Out.y=a.y+b.y;Out.z=a.z+b.z;}
-	#define AddTo(a,b) {a.x+=b.x; a.y+=b.y; a.z+=b.z;}
-
-	#define Scale(ov, iv, s) {\
-		ov.x=iv.x*s;\
-		ov.y=iv.y*s;\
-		ov.z=iv.z*s;}
-
-	#define ScaleVec(v, s){\
-		v.x*=s;\
-		v.y*=s;\
-		v.z*=s;}
-
-	#define _Scale(ov, ivx, ivy, ivz, s) {\
-		ov.x=ivx*s;\
-		ov.y=ivy*s;\
-		ov.z=ivz*s;}
-
-	#define RotateVec(ov, iv, mat) {\
-		ov.x=_Dot3(iv.x, iv.y, iv.z,  (mat).m00, (mat).m10, (mat).m20);\
-		ov.y=_Dot3(iv.x, iv.y, iv.z,  (mat).m01, (mat).m11, (mat).m21);\
-		ov.z=_Dot3(iv.x, iv.y, iv.z,  (mat).m02, (mat).m12, (mat).m22);}
-
-	#define TransformVec(ov, iv, mat) {\
-		ov.x=_Dot3(iv.x, iv.x, iv.x,  (mat).m00, (mat).m10, (mat).m20)+(mat).30;\
-		ov.y=_Dot3(iv.y, iv.y, iv.y,  (mat).m01, (mat).m11, (mat).m21)+(mat).31;\
-		ov.z=_Dot3(iv.z, iv.z, iv.z,  (mat).m02, (mat).m12, (mat).m22)+(mat).32;}
-
-	#define MatStore3x3(out, in) {\
-		out.m00=in.m00; out.m01=in.m01; out.m02=in.m02;\
-		out.m10=in.m10; out.m11=in.m11; out.m12=in.m12;\
-		out.m20=in.m20; out.m21=in.m21; out.m22=in.m22;}
-
-	#define Cross2D(v1, v2) (v1.x*v2.y-v1.y*v2.x)
-
-	#define TranslateAfter(mat, p) {\
-		(mat).m30=(p).x;\
-		(mat).m31=(p).y;\
-		(mat).m32=(p).z;}
-
-
-	#define TranslateBefore(mat, p){\
-		(mat).m30=-((p).x * (mat).m00 + (p).y * (mat).m10 + (p).z * (mat).m20);\
-		(mat).m31=-((p).x * (mat).m01 + (p).y * (mat).m11 + (p).z * (mat).m21);\
-		(mat).m32=-((p).x * (mat).m02 + (p).y * (mat).m12 + (p).z * (mat).m22);}
-
-	#define ScaleMatrixBefore(mat, s){\
-		(mat).m00*=(s).x;\
-		(mat).m10*=(s).x;\
-		(mat).m20*=(s).x;\
-		(mat).m30*=(s).x;\
-		(mat).m01*=(s).y;\
-		(mat).m11*=(s).y;\
-		(mat).m21*=(s).y;\
-		(mat).m31*=(s).y;\
-		(mat).m02*=(s).z;\
-		(mat).m12*=(s).z;\
-		(mat).m22*=(s).z;\
-		(mat).m32*=(s).z;}
-
-	#define ScaleMatrixAfter(mat, s){\
-		(mat).m00*=(s).x;\
-		(mat).m10*=(s).x;\
-		(mat).m20*=(s).x;\
-		(mat).m01*=(s).y;\
-		(mat).m11*=(s).y;\
-		(mat).m21*=(s).y;\
-		(mat).m02*=(s).z;\
-		(mat).m12*=(s).z;\
-		(mat).m22*=(s).z;}
+		//#define _MatStoreDiagonal(mat, x, y, z){\
+		//	(mat).m00=x;\
+		//	(mat).m11=y;\
+		//	(mat).m22=z;}
 
 	inline Quaternion operator+(const Quaternion& q1, const Quaternion& q2) {
 		return{ q1.i + q2.i, q1.j + q2.j, q1.k + q2.k, q1.r + q2.r };

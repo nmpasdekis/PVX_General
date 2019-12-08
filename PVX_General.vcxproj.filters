@@ -94,5 +94,11 @@
     <ClInclude Include="include\PVX_Image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\PVX_Animation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\PVX_Reflect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

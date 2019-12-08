@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <future>
 #include <execution>
+#include <type_traits>
 
 namespace PVX {
 	template<typename T>
@@ -205,6 +206,15 @@ namespace PVX {
 		return ret;
 	}
 
+	template<typename T1, typename T2, typename = std::enable_if_t<std::is_integral<T1>::value>>
+	inline auto Map(T1 count, T2 fnc) {
+		std::vector<decltype(fnc(0))> ret;
+		ret.reserve(count);
+		for (auto i = 0; i<count; i++) 
+			ret.push_back(fnc(i));
+		return ret;
+	}
+
 	template<typename T1, typename T2>
 	inline std::vector<T1> Keys(const std::map<T1, T2> & dict) {
 		std::vector<T1> ret;
@@ -274,6 +284,13 @@ namespace PVX {
 		auto sz = Array.size();
 		Array.resize(sz + moreSize);
 		memcpy(Array.data() + sz, more, moreSize);
+	}
+
+	template<typename T>
+	inline auto Extend(std::vector<T>& vec, size_t more) {
+		auto sz = vec.size();
+		vec.resize(sz + more);
+		return sz;
 	}
 }
 

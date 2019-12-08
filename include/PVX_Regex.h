@@ -4,6 +4,7 @@
 #include <vector>
 #include <regex>
 #include <string>
+#include <string_view>
 #include <functional>
 
 namespace PVX {
@@ -24,6 +25,14 @@ namespace PVX {
 	}
 	inline std::wsmatch regex_match(const std::wstring &Text, const std::wstring & RegExp) {
 		return regex_match(Text, std::wregex(RegExp));
+	}
+
+	inline decltype(*std::regex_iterator<std::string_view::const_iterator>()) regex_match(const std::string_view& Text, const std::regex& RegExp) {
+		using iter = std::regex_iterator<std::string_view::const_iterator>;
+		auto ret = iter(Text.cbegin(), Text.cend(), RegExp);
+		if (ret != iter())
+			return *ret;
+		return {};
 	}
 
 	inline std::vector<std::smatch> regex_matches(const std::string &Text, const std::regex & RegExp) {

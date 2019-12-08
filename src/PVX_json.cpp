@@ -15,9 +15,12 @@ static std::wstring JsonString(const std::wstring & s) {
 		case '\t': ret << "\\t"; break;
 		case '\r': ret << "\\r"; break;
 		case '\\': ret << "\\\\"; break;
+		case 0: 
+			goto forceEnd;
 		default: ret << c;
 		}
 	}
+	forceEnd:
 	ret << '"';
 	return ret.str();
 }
