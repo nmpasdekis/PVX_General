@@ -42,6 +42,9 @@
     <ClCompile Include="src\PVX_Image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\PVX_BinSaver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\PVX.inl">
@@ -98,6 +101,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\PVX_Reflect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\PVX_BinSaver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

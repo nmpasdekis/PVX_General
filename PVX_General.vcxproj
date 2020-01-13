@@ -77,6 +77,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\PVX_BinSaver.cpp" />
     <ClCompile Include="src\PVX_Deflate.cpp" />
     <ClCompile Include="src\PVX_Encode.cpp" />
     <ClCompile Include="src\PVX_File.cpp" />
@@ -92,6 +93,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\PVX_Animation.h" />
+    <ClInclude Include="include\PVX_BinSaver.h" />
     <ClInclude Include="include\PVX_Deflate.h" />
     <ClInclude Include="include\PVX_Encode.h" />
     <ClInclude Include="include\PVX_Encrypt.h" />
