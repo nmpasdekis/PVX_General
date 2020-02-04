@@ -24,7 +24,21 @@ forceEnd:
 	ret << '"';
 	return ret.str();
 }
-
+enum class Symbols : wchar_t {
+	Terminator = 0,
+	Quote,
+	Integer,
+	Float,
+	True,
+	False,
+	Null,
+	OpenCurly,
+	OpenSquare,
+	CloseSquare,
+	CloseCurly,
+	Comma,
+	Colon
+};
 namespace PVX {
 	namespace JSON {
 		static void WriteNumber(FILE* f, size_t n) {
@@ -146,19 +160,6 @@ namespace PVX {
 			return jsElementType::Undefined;
 		}
 
-		//Item::Item() : Type{ jsElementType::Undefined }, NumericFloat{ 0 }, _Integer{ 0 } {}
-		//Item::Item(const enum jsElementType& tp) : Type{ tp }, NumericFloat{ 0 }, _Integer{ 0 }{}
-		//Item::Item(const bool& v) : Type{ jsElementType::Boolean }, NumericFloat{ 0 }, _Integer{ v } {}
-		//Item::Item(const int& v) : Type{ jsElementType::Number }, NumericFloat{ 0 }, _Integer{ v } {}
-		////Item::Item(const enum jsBoolean& v) : Type{ jsElementType::Number }, NumericFloat{ 0 }, _Integer{ (bool)v } {}
-		//Item::Item(const long long& v) : Type{ jsElementType::Number }, NumericFloat{ 0 }, _Integer{ v } {}
-		//Item::Item(const float& v) : Type{ jsElementType::Number }, NumericFloat{ 1 }, _Double{ v } {}
-		//Item::Item(const double& v) : Type{ jsElementType::Number }, NumericFloat{ 1 }, _Double{ v } {}
-		//Item::Item(const std::wstring& s) : Type{ jsElementType::String }, NumericFloat{ 0 }, _Integer{ 0 } { String = s; }
-		//Item::Item(const wchar_t* s) : Type{ jsElementType::String }, NumericFloat{ 0 }, _Integer{ 0 } { String = s; }
-		//Item::Item(const nullptr_t&) : Type{ jsElementType::Null }, NumericFloat{ 0 }, _Integer{ 0 } {}
-		//Item::Item(const std::string& s) : Type{ jsElementType::String }, NumericFloat{ 0 }, _Integer{ 0 } { for (auto c : s) String.push_back(c); }
-		//Item::Item(const char* str) : Type{ jsElementType::String }, NumericFloat{ 0 }, _Integer{ 0 } { int i = 0; while (str[i]) String.push_back(str[i++]); }
 		Item::Item(const jsArray& its) : Type{ JSON::jsElementType::Array } {
 			auto& Array = std::get<std::vector<Item>>(Value);
 			for (auto& it : its.itms) {
@@ -249,15 +250,13 @@ namespace PVX {
 			return *this;
 		}
 
-		Item& Item::operator=(const Item& obj) {
-			Type = obj.Type;
-			Value = obj.Value;
-			return *this;
-		}
 
 		Item& Item::operator[](const std::wstring& Name) {
 			Type = jsElementType::Object;
 			return std::get<std::map<std::wstring, Item>>(Value)[Name];
+		}
+		const Item& Item::operator[](const std::wstring& Name) const {
+			return std::get<std::map<std::wstring, Item>>(Value).at(Name);
 		}
 
 		Item& Item::operator[](const std::string& Name) {
@@ -266,8 +265,16 @@ namespace PVX {
 			for (auto c : Name)n.push_back(c);
 			return std::get<std::map<std::wstring, Item>>(Value)[n];
 		}
+		const Item& Item::operator[](const std::string& Name) const {
+			std::wstring n;
+			for (auto c : Name)n.push_back(c);
+			return std::get<std::map<std::wstring, Item>>(Value).at(n);
+		}
 
 		Item& Item::operator[](int Index) {
+			return std::get<std::vector<Item>>(Value)[Index];
+		}
+		const Item& Item::operator[](int Index) const {
 			return std::get<std::vector<Item>>(Value)[Index];
 		}
 
@@ -301,20 +308,20 @@ namespace PVX {
 			return ret;
 		}
 
-		int Item::length() {
+		int Item::length() const {
 			return (int)std::get<std::vector<Item>>(Value).size();
 		}
 
-		int Item::IsNull() {
+		bool Item::IsNull() const {
 			return Type == jsElementType::Null;
 		}
-		int Item::IsUndefined() {
+		bool Item::IsUndefined() const {
 			return Type == jsElementType::Undefined;
 		}
-		int Item::IsNullOrUndefined() {
+		bool Item::IsNullOrUndefined() const {
 			return Type == jsElementType::Null || Type == jsElementType::Undefined;
 		}
-		int Item::IsEmpty() {
+		bool Item::IsEmpty()  const {
 			return
 				Type == jsElementType::Null ||
 				Type == jsElementType::Undefined ||
@@ -479,6 +486,7 @@ namespace PVX {
 					return ret;
 				}
 			}
+			return PVX::JSON::jsElementType::Undefined;
 		}
 		Item Item::DeepReducedCopy() {
 			switch (Type) {
@@ -512,6 +520,7 @@ namespace PVX {
 					return ret;
 				}
 			}
+			return PVX::JSON::jsElementType::Undefined;
 		}
 
 		Item& Item::Cache() {
@@ -626,32 +635,33 @@ namespace PVX {
 
 
 		struct jsonStack {
-			char op;
-			char Empty = 0;
+			int op;
+			int Empty = 0;
 			PVX::JSON::Item val;
 			std::vector<jsonStack> Child;
+			jsonStack(int op, int empty, const PVX::JSON::Item&& val) : op{ op }, Empty{ empty }, val{ val }{}
+			jsonStack(int op, char empty) : op{ op }, Empty{ empty }{}
+			jsonStack(int op) : op{ op } {
+				Child.reserve(2);
+			}
 		};
-		static std::wregex jsonSpaces(LR"regex(\s+)regex", std::regex_constants::optimize);
-		//static std::wregex jsonObjectStrings(LR"regex(\"((\\\"|[^\"])*)\")regex", std::regex_constants::optimize);
-		static std::wregex jsonNulls(LR"regex(null)regex", std::regex_constants::optimize);
 
-
-
-		void MakeObject(Item& obj, const jsonStack& s) {
-			if (s.op == ':') {
-				obj[s.Child[1].val.String()] = s.Child[0].val;
-			} else if (s.op == ',') {
-				for (auto& c : s.Child) MakeObject(obj, c);
+		void MakeObject(Item& obj, jsonStack&& s) {
+			if (s.op == (char)Symbols::Colon) {
+				obj[s.Child[1].val.String()] = std::move(s.Child[0].val);
+			} else if (s.op == (char)Symbols::Comma) {
+				for (auto& c : s.Child)
+					MakeObject(obj, std::move(c));
 			} else obj = jsElementType::Undefined;
 		}
-		void MakeArray(Item& obj, const jsonStack& s) {
-			if (s.op == ',')
+		void MakeArray(Item& obj, jsonStack&& s) {
+			if (s.op == (char)Symbols::Comma) {
 				for (long long i = long long(s.Child.size()) - 1; i >= 0; i--)
-					MakeArray(obj, s.Child[i]);
-			else obj.push(s.val);
+					MakeArray(obj, std::move(s.Child[i]));
+			} else obj.push(s.val);
 		}
 
-		std::wstring RemoveStrings(const std::wstring& txt, std::vector<std::wstring>& Strings) {
+		static std::wstring RemoveStrings2(const std::wstring& txt, std::vector<std::wstring>& Strings) {
 			std::wstring ret;
 			int Escape = 0;
 			long long Start = -1;
@@ -660,8 +670,7 @@ namespace PVX {
 				auto c = txt[i];
 				if (c == '\"' && !Escape) {
 					if (Out) {
-						//ret.pop_back();
-						Start = i +1;
+						Start = i + 1;
 						Out = 0;
 					} else {
 						Strings.push_back(PVX::Decode::Unescape(txt.substr(Start, i - Start)));
@@ -673,6 +682,22 @@ namespace PVX {
 				Escape = c == '\\';
 			}
 			return ret;
+		}
+
+		static std::wstring RemoveStrings(const std::wstring& text, std::vector<std::wstring>& Strings) {
+			std::wstring Text = text;
+			long long index = Text.find('"');
+			while (index != -1) {
+				long long end = Text.find('"', index + 1);
+				while (end != -1 && Text[end - 1] == '\\') end = Text.find('"', end + 1);
+				if (end == -1)
+					return L"";
+
+				Strings.push_back(Text.substr(index + 1, end - index - 1));
+				Text = Text.replace(index, end - index + 1, L"\x01");
+				index = Text.find('"', index + 1);
+			}
+			return Text;
 		}
 
 		long long FindNum(std::wstring& txt, long long& cur, long long start) {
@@ -698,10 +723,10 @@ namespace PVX {
 					end++;
 					while (txt[end]>=L'0' && txt[end]<=L'9') end++;
 					Doubles.push_back(_wtof(&txt[start]));
-					txt[cur] = 'f';
+					txt[cur] = (wchar_t)Symbols::Float;
 				} else {
 					Integers.push_back(_wtoi64(&txt[start]));
-					txt[cur] = 'i';
+					txt[cur] = (wchar_t)Symbols::Integer;
 				}
 				cur++;
 
@@ -725,16 +750,16 @@ namespace PVX {
 				if (txt[i] == 't') {
 					ret.push_back(true);
 					i += 3;
-					txt[j++] = 't';
+					txt[j++] = (wchar_t)Symbols::True;
 					continue;
 				} else if (txt[i] == 'f') {
 					ret.push_back(false);
 					i += 4;
-					txt[j++] = 'x';
+					txt[j++] = (wchar_t)Symbols::False;
 					continue;
 				} else if (txt[i] == 'n') {
 					i += 3;
-					txt[j++] = '0';
+					txt[j++] = (wchar_t)Symbols::Null;
 					continue;
 				}
 				txt[j++] = txt[i];
@@ -742,126 +767,6 @@ namespace PVX {
 			txt.resize(j);
 		}
 
-		Item parse2(const std::wstring& Json) {
-			auto prec = [](int c) {
-				switch (c) {
-					case ',':
-						return 10;
-					case ':':
-						return 20;
-					case '[': case '{':
-						return 0;
-				}
-				return -1;
-			};
-			std::vector<std::wstring> Strings;
-			std::vector<long long> Integers;
-			std::vector<double> Doubles;
-
-			auto tmp = RemoveStrings(Json, Strings);
-			removeSpaces(tmp);
-			removeBoolsAndNulls(tmp);
-			removeNumbers(tmp, Doubles, Integers);
-
-			std::vector<jsonStack> Output, Stack2;
-			Output.reserve(tmp.size());
-			std::vector<char> Stack;
-			int ItemCount = 0;
-			int ints = 0, floats = 0, strings = 0;
-
-			for (auto c : tmp) {
-				char Empty = 0;
-				switch (c) {
-					case '"': Output.push_back({ 0, 0, Strings[strings++] }); ItemCount++; break;
-					case 'i': Output.push_back({ 0, 0, Integers[ints++] }); ItemCount++; break;
-					case 'f': Output.push_back({ 0, 0, Doubles[floats++] }); ItemCount++; break;
-					case 't': Output.push_back({ 0, 0, true }); ItemCount++; break;
-					case 'x': Output.push_back({ 0, 0, false }); ItemCount++; break;
-					case '0': Output.push_back({ 0, 0, jsElementType::Null }); ItemCount++;  break;
-					case '{': Stack.push_back('{'); ItemCount = 0; break;
-					case '[': Stack.push_back('['); ItemCount = 0; break;
-					case ']': {
-						if (Stack.size() && Stack.back() == '[' && !ItemCount) Empty = 1;
-						while (Stack.size() && Stack.back() != '[') {
-							Output.push_back({ Stack.back(), 0 });
-							Stack.pop_back();
-						}
-						if (!Stack.size()||Stack.back()!='[')
-							return jsElementType::Undefined;
-						Stack.pop_back();
-						Output.push_back({ '[', Empty, jsElementType::Array });
-						ItemCount++;
-						break;
-					}
-					case '}': {
-						if (Stack.size() && Stack.back() == '{' && !ItemCount) Empty = 1;
-						while (Stack.size() && Stack.back() != '{') {
-							Output.push_back({ Stack.back() });
-							Stack.pop_back();
-						}
-						if (!Stack.size() || Stack.back() != '{')
-							return jsElementType::Undefined;
-						Stack.pop_back();
-						Output.push_back({ '{', Empty,jsElementType::Object });
-						ItemCount++;
-						break;
-					}
-					default: {
-						int p = prec(c);
-
-						while (Stack.size() && prec(Stack.back()) > p) {
-							Output.push_back({ Stack.back() });
-							Stack.pop_back();
-						}
-						Stack.push_back(c);
-						break;
-					}
-
-				}
-			}
-			while (Stack.size()) {
-				Output.push_back({ Stack.back() });
-				Stack.pop_back();
-			}
-
-			for (auto& s : Output) {
-				if (s.op) {
-					if (s.op == ':' || s.op == ',') {
-						if (Stack2.size() >= 2) {
-							s.Child.push_back(Stack2.back());
-							Stack2.pop_back();
-							s.Child.push_back(Stack2.back());
-							Stack2.back() = s;
-							continue;
-						}
-						return jsElementType::Undefined;
-					} else {
-						if (Stack2.size()) {
-							if (s.op == '{') {
-								if (!s.Empty) {
-									MakeObject(s.val, Stack2.back());
-									Stack2.back() = s;
-								} else
-									Stack2.push_back(s);
-								continue;
-							} else {
-								if (!s.Empty) {
-									MakeArray(s.val, Stack2.back());
-									Stack2.back() = s;
-								} else
-									Stack2.push_back(s);
-								continue;
-							}
-						}
-						return jsElementType::Undefined;
-					}
-				} else {
-					Stack2.push_back(s);
-				}
-			}
-			if (Stack2.size() == 1) return Stack2[0].val;
-			return jsElementType::Undefined;
-		}
 		Item parse(const std::wstring& Json) {
 			std::vector<std::wstring> Strings;
 			std::vector<long long> Integers;
@@ -873,111 +778,110 @@ namespace PVX {
 			removeNumbers(tmp, Doubles, Integers);
 
 			std::vector<jsonStack> Output, Stack2;
+			Output.reserve(tmp.size());
+			Stack2.reserve(tmp.size());
+			std::vector<char> Stack;
+			Stack.reserve(tmp.size());
+			int ItemCount = 0;
+			int ints = 0, floats = 0, strings = 0;
 
-			std::function<void()> Dijkstra[128];
-			{
-				Output.reserve(tmp.size());
-				int ItemCount = 0;
-				int ints = 0, floats = 0, strings = 0;
+			for (auto& t : tmp) {
+				switch (t) {
+					case '{': t = (wchar_t)Symbols::OpenCurly; continue;
+					case '[': t = (wchar_t)Symbols::OpenSquare; continue;
+					case ']': t = (wchar_t)Symbols::CloseSquare; continue;
+					case '}': t = (wchar_t)Symbols::CloseCurly; continue;
+					case ',': t = (wchar_t)Symbols::Comma; continue;
+					case ':': t = (wchar_t)Symbols::Colon; continue;
+				}
+			}
+
+			for (auto c : tmp) {
 				char Empty = 0;
-				std::vector<unsigned char> Stack;
-				int OK = 1;
-				Dijkstra['"'] = [&]() { Output.push_back({ 0, 0, Strings[strings++] }); ItemCount++; };
-				Dijkstra['i'] = [&]() { Output.push_back({ 0, 0, Integers[ints++] }); ItemCount++; };
-				Dijkstra['f'] = [&]() { Output.push_back({ 0, 0, Doubles[floats++] }); ItemCount++; };
-				Dijkstra['t'] = [&]() { Output.push_back({ 0, 0, true }); ItemCount++; };
-				Dijkstra['x'] = [&]() { Output.push_back({ 0, 0, false }); ItemCount++; };
-				Dijkstra['0'] = [&]() { Output.push_back({ 0, 0, jsElementType::Null }); ItemCount++; };
-				Dijkstra['{'] = [&]() { Stack.push_back(25); ItemCount = 0; };
-				Dijkstra['['] = [&]() { Stack.push_back(15); ItemCount = 0; };
-
-				Dijkstra[']'] = [&]() {
-					if (Stack.size() && Stack.back() == 15 && !ItemCount) Empty = 1;
-					while (Stack.size() && Stack.back() != 15) {
-						Output.push_back({ (char)Stack.back() });
+				switch (c) {
+					case (wchar_t)Symbols::Quote: Output.emplace_back(0, 0, std::move(Strings[strings++])); ItemCount++; break;
+					case (wchar_t)Symbols::Integer: Output.emplace_back(0, 0, std::move(Integers[ints++])); ItemCount++; break;
+					case (wchar_t)Symbols::Float: Output.emplace_back(0, 0, std::move(Doubles[floats++])); ItemCount++; break;
+					case (wchar_t)Symbols::True: Output.emplace_back(0, 0, true); ItemCount++; break;
+					case (wchar_t)Symbols::False: Output.emplace_back(0, 0, false); ItemCount++; break;
+					case (wchar_t)Symbols::Null: Output.emplace_back(0, 0, jsElementType::Null); ItemCount++;  break;
+					case (wchar_t)Symbols::OpenCurly: Stack.push_back((wchar_t)Symbols::OpenCurly); ItemCount = 0; break;
+					case (wchar_t)Symbols::OpenSquare: Stack.push_back((wchar_t)Symbols::OpenSquare); ItemCount = 0; break;
+					case (wchar_t)Symbols::CloseSquare: {
+						if (Stack.size() && Stack.back() == (wchar_t)Symbols::OpenSquare && !ItemCount) Empty = 1;
+						while (Stack.size() && Stack.back() != (wchar_t)Symbols::OpenSquare) {
+							Output.emplace_back(Stack.back(), 0);
+							Stack.pop_back();
+						}
+						if (!Stack.size()||Stack.back()!=(wchar_t)Symbols::OpenSquare)
+							return jsElementType::Undefined;
 						Stack.pop_back();
+						Output.emplace_back((char)Symbols::OpenSquare, Empty, jsElementType::Array);
+						ItemCount++;
+						break;
 					}
-					if (!Stack.size()||Stack.back()!=15) {
-						OK = 0;
-						return;
-					}
-					Stack.pop_back();
-					Output.push_back({ '[', Empty, jsElementType::Array });
-					ItemCount++;
-				};
-				Dijkstra['}'] = [&]() {
-					if (Stack.size() && Stack.back() == 25 && !ItemCount) Empty = 1;
-					while (Stack.size() && Stack.back() != 25) {
-						Output.push_back({ (char)Stack.back() });
+					case (wchar_t)Symbols::CloseCurly: {
+						if (Stack.size() && Stack.back() == (wchar_t)Symbols::OpenCurly && !ItemCount) Empty = 1;
+						while (Stack.size() && Stack.back() != (wchar_t)Symbols::OpenCurly) {
+							Output.emplace_back(Stack.back());
+							Stack.pop_back();
+						}
+						if (!Stack.size() || Stack.back() != (wchar_t)Symbols::OpenCurly)
+							return jsElementType::Undefined;
 						Stack.pop_back();
+						Output.emplace_back((wchar_t)Symbols::OpenCurly, Empty, jsElementType::Object);
+						ItemCount++;
+						break;
 					}
-					if (!Stack.size() || Stack.back() != 25) {
-						OK = 0;
-						return;
-					}
-					Stack.pop_back();
-					Output.push_back({ '{', Empty, jsElementType::Object });
-					ItemCount++;
-				};
-				Dijkstra[':'] = [&]() {
-					while (Stack.size() && Stack.back() > ':') {
-						Output.push_back({ (char)Stack.back() });
-						Stack.pop_back();
-					}
-					Stack.push_back(':');
-				};
-				Dijkstra[','] = [&]() {
-					while (Stack.size() && Stack.back() > ',') {
-						Output.push_back({ (char)Stack.back() });
-						Stack.pop_back();
-					}
-					Stack.push_back(',');
-				};
-
-				for (auto c : tmp) {
-					Empty = 0;
-					Dijkstra[c]();
-					if (OK) continue;
-					return jsElementType::Undefined;
+					case (wchar_t)Symbols::Comma:
+						while (Stack.size() && Stack.back() > (wchar_t)Symbols::Comma) {
+							Output.emplace_back(Stack.back());
+							Stack.pop_back();
+						}
+						Stack.push_back(c);
+						break;
+					case (wchar_t)Symbols::Colon:
+						Stack.push_back(c);
+						break;
 				}
-				while (Stack.size()) {
-					Output.push_back({ (char)Stack.back() });
-					Stack.pop_back();
-				}
+			}
+			while (Stack.size()) {
+				Output.push_back({ Stack.back() });
+				Stack.pop_back();
 			}
 
 			for (auto& s : Output) {
 				switch (s.op) {
-					case 0:	Stack2.push_back(s); break;
-					case ':':
-					case ',': {
+					case 0:	Stack2.emplace_back(std::move(s)); break;
+					case (wchar_t)Symbols::Colon:
+					case (wchar_t)Symbols::Comma: {
 						if (Stack2.size() >= 2) {
-							s.Child.push_back(Stack2.back());
+							s.Child.emplace_back(std::move(Stack2.back()));
 							Stack2.pop_back();
-							s.Child.push_back(Stack2.back());
+							s.Child.emplace_back(std::move(Stack2.back()));
 							Stack2.back() = s;
 							break;
 						}
 						return jsElementType::Undefined;
 					}
-					case '{': {
-						if (Stack2.size()) {
-							if (!s.Empty) {
-								MakeObject(s.val, Stack2.back());
-								Stack2.back() = s;
-							} else
-								Stack2.push_back(s);
+					case (wchar_t)Symbols::OpenCurly: {
+						if (s.Empty) {
+							Stack2.emplace_back(std::move(s));
+							break;
+						} else if (Stack2.size()) {
+							MakeObject(s.val, std::move(Stack2.back()));
+							Stack2.back() = std::move(s);
 							break;
 						}
 						return jsElementType::Undefined;
 					}
-					case '[': {
-						if (Stack2.size()) {
-							if (!s.Empty) {
-								MakeArray(s.val, Stack2.back());
-								Stack2.back() = s;
-							} else
-								Stack2.push_back(s);
+					case (wchar_t)Symbols::OpenSquare: {
+						if (s.Empty) {
+							Stack2.emplace_back(std::move(s));
+							break;
+						} else if (Stack2.size()) {
+							MakeArray(s.val, std::move(Stack2.back()));
+							Stack2.back() = std::move(s);
 							break;
 						}
 						return jsElementType::Undefined;

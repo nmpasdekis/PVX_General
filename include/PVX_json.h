@@ -107,11 +107,18 @@ namespace PVX {
 			Item& operator=(const wchar_t* str);
 			Item& operator=(const char* str);
 			Item& operator=(const std::vector<unsigned char>&);
-			Item& operator=(const Item&);
+			Item& operator=(const Item& obj) {
+				Type = obj.Type;
+				Value = obj.Value;
+				return *this;
+			}
 
 			Item& operator[](const std::wstring&);
 			Item& operator[](const std::string&);
 			Item& operator[](int);
+			const Item& operator[](const std::wstring&) const;
+			const Item& operator[](const std::string&) const;
+			const Item& operator[](int) const;
 			Item Get(const std::wstring&, const Item& Default = jsElementType::Undefined) const;
 			const Item* Has(const std::wstring&) const;
 
@@ -119,12 +126,14 @@ namespace PVX {
 
 			void push(const Item&);
 			Item pop();
-			int length();
+			int length() const;
 
-			int IsNull();
-			int IsUndefined();
-			int IsNullOrUndefined();
-			int IsEmpty();
+			bool IsNull() const;
+			bool IsUndefined() const;
+			bool IsNullOrUndefined() const;
+			bool IsEmpty() const;
+			inline bool IsInteger() const { return Type == jsElementType::Number && std::holds_alternative<long long>(Value); }
+			inline bool IsDouble() const { return Type == jsElementType::Number && std::holds_alternative<double>(Value); }
 
 			std::vector<std::wstring> Keys() const;
 			std::vector<PVX::JSON::Item> Values() const;
@@ -174,15 +183,19 @@ namespace PVX {
 			jsElementType Type;
 			std::variant<bool, long long, double, std::wstring, std::vector<Item>, std::map<std::wstring, Item>> Value;
 
-			//int NumericFloat;
-			//std::wstring String;
-			//std::vector<Item> Array;
-			//std::map<std::wstring, Item> Object;
+			inline std::vector<Item> getArray() {
+				return std::get<std::vector<Item>>(Value);
+			}
+			inline const std::vector<Item>getArray() const {
+				return std::get<std::vector<Item>>(Value);
+			}
+			inline std::map<std::wstring, Item> getObject() {
+				return std::get<std::map<std::wstring, Item>>(Value);
+			}
+			inline const std::map<std::wstring, Item> getObject() const {
+				return std::get<std::map<std::wstring, Item>>(Value);
+			}
 		private:
-			//union {
-			//	long long _Integer;
-			//	double _Double;
-			//};
 			void WriteBin(void*);
 			static Item ReadBin(void*);
 			Item* cache = nullptr;
