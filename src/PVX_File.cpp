@@ -605,7 +605,7 @@ namespace PVX {
 			_wfopen_s(&fin, Filename, L"rb");
 		}
 		size_t Text::ReadLine() {
-			int i;
+			long long i;
 			std::vector<unsigned char> Data;
 			do {
 				if(BufferSize == BufferPosition) {

@@ -18,7 +18,7 @@ namespace PVX{
 		vector<string> Split(const string & Text, const string & Separator) {
 			vector<string> ret;
 			size_t ssz = Separator.size(), last = 0;
-			int start = 0;
+			long long start = 0;
 			while(-1 != (start = Text.find(Separator, start))) {
 				if(((unsigned int)start) >= last)
 					ret.push_back(Text.substr(last, start - last));
@@ -59,7 +59,7 @@ namespace PVX{
 		vector<wstring> Split(const wstring & Text, const wstring & Separator) {
 			vector<wstring> ret;
 			size_t ssz = Separator.size(), last = 0;
-			int start = 0;
+			long long start = 0;
 			while(-1 != (start = Text.find(Separator, start))) {
 				if(((unsigned int)start) >= last)
 					ret.push_back(Text.substr(last, start - last));
@@ -135,37 +135,17 @@ namespace PVX{
 		}
 
 		string Trim(const string & s) {
-			int start, end;
+			long long start, end;
 			for(start = 0; s[start] && (s[start] == ' ' || s[start] == '\t' || s[start] == '\n' || s[start] == '\r'); start++);
 			for(end = s.size() - 1; end >= 0 && (s[end] == ' ' || s[end] == '\t' || s[end] == '\n' || s[end] == '\r'); end--);
 			return s.substr(start, end - start + 1);
 		}
 		wstring Trim(const wstring & s) {
-			int start, end;
+			long long start, end;
 			for(start = 0; s[start] && (s[start] == L' ' || s[start] == L'\t' || s[start] == L'\n' || s[start] == L'\r'); start++);
 			for(end = s.size() - 1; end >= 0 && (s[end] == L' ' || s[end] == L'\t' || s[end] == L'\n' || s[end] == L'\r'); end--);
 			return s.substr(start, end - start + 1);
 		}
-
-		//std::string Replace(std::string & Text, const std::regex & pattern, std::function<const std::string(const std::smatch&)> newWordFnc) {
-		//	struct myMatch {
-		//		size_t start, end;
-		//	};
-		//	std::vector<myMatch> matches;
-		//	PVX::onMatch(Text, pattern, [&matches, &Text](const std::smatch & m) {
-		//		matches.push_back({
-		//			(size_t)(m[0].first._Ptr - Text.c_str()),
-		//			(size_t)(m[0].second._Ptr - Text.c_str())
-		//		});
-		//	}); for (long long i = matches.size() - 1; i >= 0; i--) {
-		//		auto first = Text.cbegin() + matches[i].start;
-		//		auto last = Text.begin() + matches[i].end;
-		//		auto m = std::sregex_iterator(first, Text.end(), pattern);
-		//		auto nw = newWordFnc(*m);
-		//		Text.replace(first, last, nw.c_str());
-		//	}
-		//	return Text;
-		//}
 
 		std::string Replace(const std::string & Text, const std::regex & pattern, std::function<const std::string(const std::smatch&)> newWordFnc) {
 			std::vector<smatch> matches;

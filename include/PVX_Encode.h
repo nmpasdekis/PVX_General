@@ -11,23 +11,23 @@ namespace PVX{
 		std::string ToString(const std::vector<unsigned char> & data);
 		std::string ToString(const std::wstring & data);
 		std::wstring ToString(const std::string & data);
-		std::string Base64(const void * data, int size);
+		std::string Base64(const void * data, size_t size);
 		std::string Base64(const std::vector<unsigned char>& data);
 		template<int Size>
 		inline std::string Base64(const std::array<unsigned char, Size>& data) {
 			return Base64(data.data(), Size);
 		}
-		std::string Base64Url(const void* data, int size, bool NoPadding = false);
+		std::string Base64Url(const void* data, size_t size, bool NoPadding = false);
 		template<typename T>
 		inline std::string Base64Url(const T& data, bool NoPadding = false) { return Base64Url(data.data(), data.size(), NoPadding); }
 		inline std::string Base64Url(const char* data, bool NoPadding = false) { return Base64Url(data, strlen(data), NoPadding); }
 		std::vector<unsigned char> UTF0(const std::wstring & Text);
 		std::vector<unsigned char> UTF(const std::wstring & Text);
 		void UTF(std::vector<unsigned char> & utf, const std::wstring & Text);
-		int UTF(unsigned char * Data, const wchar_t * Str);
-		int UTF_Length(const wchar_t * Str);
-		int UTF_Length(const std::wstring & Str);
-		int Uri_Length(const char * u);
+		size_t UTF(unsigned char * Data, const wchar_t * Str);
+		size_t UTF_Length(const wchar_t * Str);
+		size_t UTF_Length(const std::wstring & Str);
+		size_t Uri_Length(const char * u);
 		std::string UriEncode(const std::string & s);
 		std::string UriEncode(const std::vector<unsigned char> & s);
 		std::string Uri(const std::wstring & s);
@@ -43,7 +43,7 @@ namespace PVX{
 		std::vector<unsigned char> Base64Url(const wchar_t* Base64, size_t sz);
 		std::vector<unsigned char> Base64Url(const std::wstring& base64);
 
-		std::wstring UTF(const unsigned char * utf, int sz);
+		std::wstring UTF(const unsigned char * utf, size_t sz);
 		std::wstring UTF(const std::vector<unsigned char> & Utf);
 		wchar_t * pUTF(const unsigned char * utf);
 		std::wstring Windows1253(const std::vector<unsigned char> & s);

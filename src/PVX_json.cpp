@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <PVX_String.h>
 #include <PVX_Encode.h>
+#include <PVX_File.h>
+#include <string_view>
 
 static std::wstring JsonString(const std::wstring& s) {
 	std::wstringstream ret;
@@ -39,6 +41,7 @@ enum class Symbols : wchar_t {
 	Comma,
 	Colon
 };
+
 namespace PVX {
 	namespace JSON {
 		static void WriteNumber(FILE* f, size_t n) {
@@ -49,14 +52,14 @@ namespace PVX {
 			fwrite(&s[0], sizeof(wchar_t), s.size(), f);
 		}
 		void Item::WriteBin(void* f) {
-			WriteNumber((FILE*)f, (size_t)Type);
-			WriteNumber((FILE*)f, std::holds_alternative<double>(Value));
-			switch (Type) {
-				case JSON::jsElementType::Number: fwrite(&Integer(), sizeof(long long), 1, (FILE*)f); break;
+			WriteNumber((FILE*)f, (size_t)Value.GetType());
+			switch (Value.GetType()) {
+				case JSON::jsElementType::Integer: fwrite(&Integer(), sizeof(long long), 1, (FILE*)f); break;
+				case JSON::jsElementType::Float: fwrite(&Double(), sizeof(double), 1, (FILE*)f); break;
 				case JSON::jsElementType::String: WriteString((FILE*)f, String()); break;
 				case JSON::jsElementType::Array:
 				{
-					auto& Array = std::get<std::vector<Item>>(Value);
+					auto& Array = Value.Array();
 					WriteNumber((FILE*)f, Array.size());
 					for (auto& i : Array)
 						i.WriteBin(f);
@@ -64,12 +67,12 @@ namespace PVX {
 				}
 				case JSON::jsElementType::Object:
 				{
-					auto& Object = std::get<std::map<std::wstring, Item>>(Value);
+					auto& Object = Value.Object();
 					WriteNumber((FILE*)f, Object.size());
-					for (auto& i : Object) {
-						if (i.second.Type!= JSON::jsElementType::Undefined && i.second.Type!=JSON::jsElementType::Null)
-							WriteString((FILE*)f, i.first);
-						i.second.WriteBin(f);
+					for (auto& [n, v] : Object) {
+						if (v.Value.GetType()!= JSON::jsElementType::Undefined && v.Value.GetType()!=JSON::jsElementType::Null)
+							WriteString((FILE*)f, n);
+						v.WriteBin(f);
 					}
 					break;
 				}
@@ -118,19 +121,19 @@ namespace PVX {
 		}
 		Item Item::ReadBin(void* f) {
 			JSON::jsElementType type = (JSON::jsElementType)ReadInt((FILE*)f);
-			int IsFloat = ReadInt((FILE*)f);
 			size_t count;
 			switch (type) {
-				case JSON::jsElementType::Number:
-					if (IsFloat) return ReadDouble((FILE*)f);
-					else return ReadLong((FILE*)f);
+				case JSON::jsElementType::Integer:
+					return ReadLong((FILE*)f);
+				case JSON::jsElementType::Float:
+					return ReadDouble((FILE*)f);
 				case JSON::jsElementType::String:
 					return ReadString((FILE*)f);
 				case JSON::jsElementType::Array:
 				{
 					count = ReadInt((FILE*)f);
 					Item ret = JSON::jsElementType::Array;
-					auto& Array = std::get<std::vector<Item>>(ret.Value);
+					auto& Array = ret.Value.Array();
 					for (auto i = 0; i < count; i++) Array.push_back(ReadBin(f));
 					return ret;
 				};
@@ -138,7 +141,7 @@ namespace PVX {
 				{
 					count = ReadInt((FILE*)f);
 					Item ret = JSON::jsElementType::Object;
-					auto& Object = std::get<std::map<std::wstring, Item>>(ret.Value);
+					auto& Object = ret.Value.Object();
 					for (auto i = 0; i < count; i++) { auto name = ReadString((FILE*)f); Object[name] = ReadBin(f); }
 					return ret;
 				};
@@ -160,11 +163,12 @@ namespace PVX {
 			return jsElementType::Undefined;
 		}
 
-		Item::Item(const jsArray& its) : Type{ JSON::jsElementType::Array } {
-			auto& Array = std::get<std::vector<Item>>(Value);
+		Item::Item(const jsArray& its) {
+			std::vector<Item> Array;
 			for (auto& it : its.itms) {
 				Array.push_back(it);
 			}
+			Value = Array;
 		}
 
 		static std::wstring wstr(const std::string& str) {
@@ -173,11 +177,11 @@ namespace PVX {
 			return ret;
 		}
 		Item& Item::operator=(const jsElementType tp) {
-			Type = tp;
 			switch (tp) {
 				case jsElementType::Undefined: Value = false; break;
 				case jsElementType::Null: Value = false; break;
-				case jsElementType::Number: Value = 0.0; break;
+				case jsElementType::Integer: Value = 0; break;
+				case jsElementType::Float: Value = 0.0; break;
 				case jsElementType::String: Value = L""; break;
 				case jsElementType::Array: Value = std::vector<Item>(); break;
 				case jsElementType::Object: Value = std::map<std::wstring, Item>(); break;
@@ -186,38 +190,31 @@ namespace PVX {
 			return *this;
 		}
 		Item& Item::operator=(const int v) {
-			Type = JSON::jsElementType::Number;
 			Value = (long long)v;
 			return *this;
 		}
 		Item& Item::operator=(const long long v) {
-			Type = JSON::jsElementType::Number;
 			Value = (long long)v;
 			return *this;
 		}
 		Item& Item::operator=(const float v) {
-			Type = JSON::jsElementType::Number;
 			Value = (double)v;
 			return *this;
 		}
 		Item& Item::operator=(const double v) {
-			Type = JSON::jsElementType::Number;
 			Value = v;
 			return *this;
 		}
 		Item& Item::operator=(const bool v) {
-			Type = JSON::jsElementType::Boolean;
 			Value = v;
 			return *this;
 		}
 		Item& Item::operator=(const std::wstring& v) {
-			Type = JSON::jsElementType::String;
 			Value = v;
 			return *this;
 		}
 
 		Item& Item::operator=(const std::string& s) {
-			Type = JSON::jsElementType::String;
 			std::wstring String;
 			String.reserve(s.size());
 			for (auto c : s) String.push_back(c);
@@ -225,14 +222,12 @@ namespace PVX {
 			return *this;
 		}
 		Item& Item::operator=(const wchar_t* v) {
-			Type = JSON::jsElementType::String;
 			Value = std::wstring(v);
 			return *this;
 		}
 
 		Item& Item::operator=(const char* s2) {
 			std::string s = s2;
-			Type = JSON::jsElementType::String;
 			std::wstring String;
 			String.reserve(s.size());
 			for (auto c : s) String.push_back(c);
@@ -241,7 +236,6 @@ namespace PVX {
 		}
 
 		Item& Item::operator=(const std::vector<unsigned char>& v) {
-			Type = JSON::jsElementType::String;
 			std::string tmp = PVX::Encode::Base64(v);
 			std::wstring String;
 			String.reserve(tmp.size());
@@ -252,41 +246,39 @@ namespace PVX {
 
 
 		Item& Item::operator[](const std::wstring& Name) {
-			Type = jsElementType::Object;
-			return std::get<std::map<std::wstring, Item>>(Value)[Name];
+			return Value.Object()[Name];
 		}
 		const Item& Item::operator[](const std::wstring& Name) const {
-			return std::get<std::map<std::wstring, Item>>(Value).at(Name);
+			return Value.Object().at(Name);
 		}
 
 		Item& Item::operator[](const std::string& Name) {
-			Type = jsElementType::Object;
 			std::wstring n;
 			for (auto c : Name)n.push_back(c);
-			return std::get<std::map<std::wstring, Item>>(Value)[n];
+			return Value.Object()[n];
 		}
 		const Item& Item::operator[](const std::string& Name) const {
 			std::wstring n;
 			for (auto c : Name)n.push_back(c);
-			return std::get<std::map<std::wstring, Item>>(Value).at(n);
+			return Value.Object().at(n);
 		}
 
 		Item& Item::operator[](int Index) {
-			return std::get<std::vector<Item>>(Value)[Index];
+			return Value.Array()[Index];
 		}
 		const Item& Item::operator[](int Index) const {
-			return std::get<std::vector<Item>>(Value)[Index];
+			return Value.Array()[Index];
 		}
 
 		Item Item::Get(const std::wstring& Name, const Item& Default) const {
-			auto& Object = std::get<std::map<std::wstring, Item>>(Value);
+			auto& Object = Value.Object();
 			if (auto ret = Object.find(Name); ret!=Object.end())
 				return ret->second;
 			return Default;
 		}
 
 		const Item* Item::Has(const std::wstring& Name) const {
-			auto& Object = std::get<std::map<std::wstring, Item>>(Value);
+			auto& Object = Value.Object();
 			if (auto ret = Object.find(Name); ret != Object.end())
 				return &(ret->second);
 			return nullptr;
@@ -298,66 +290,69 @@ namespace PVX {
 		}
 
 		void Item::push(const Item& it) {
-			std::get<std::vector<Item>>(Value).push_back(it);
+			Value.Array().emplace_back(it);
 		}
 
 		Item Item::pop() {
-			auto& Array = std::get<std::vector<Item>>(Value);
+			auto& Array = Value.Array();
 			auto ret = Array.back();
 			Array.pop_back();
 			return ret;
 		}
 
 		int Item::length() const {
-			return (int)std::get<std::vector<Item>>(Value).size();
+			return (int)Value.Array().size();
 		}
 
 		bool Item::IsNull() const {
-			return Type == jsElementType::Null;
+			return Value.GetType() == jsElementType::Null;
 		}
 		bool Item::IsUndefined() const {
-			return Type == jsElementType::Undefined;
+			return Value.GetType() == jsElementType::Undefined;
 		}
 		bool Item::IsNullOrUndefined() const {
-			return Type == jsElementType::Null || Type == jsElementType::Undefined;
+			return Value.GetType() == jsElementType::Null || Value.GetType() == jsElementType::Undefined;
 		}
 		bool Item::IsEmpty()  const {
+			auto Type = Value.GetType();
 			return
 				Type == jsElementType::Null ||
 				Type == jsElementType::Undefined ||
-				(Type == jsElementType::Number && !Integer()) ||
+				((Type == jsElementType::Integer || Type == jsElementType::Boolean || Type == jsElementType::Float) && !Integer()) ||
 				(Type == jsElementType::String && !String().size()) ||
-				(Type == jsElementType::Array && !std::get<std::vector<Item>>(Value).size()) ||
-				(Type == jsElementType::Object && !std::get<std::map<std::wstring, Item>>(Value).size());
+				(Type == jsElementType::Array && !Value.Array().size()) ||
+				(Type == jsElementType::Object && !Value.Object().size());
 		}
 
 		std::vector<std::wstring> Item::Keys() const {
 			std::vector<std::wstring> ret;
-			for (auto& kv : std::get<std::map<std::wstring, Item>>(Value))
+			for (auto& kv : Value.Object())
 				ret.push_back(kv.first);
 			return ret;
 		}
 		std::vector<PVX::JSON::Item> Item::Values() const {
 			std::vector<PVX::JSON::Item> ret;
-			for (auto& kv : std::get<std::map<std::wstring, Item>>(Value))
+			for (auto& kv : Value.Object())
 				ret.push_back(kv.second);
 			return ret;
 		}
 
 		double Item::NumberSafeDouble() {
-			if (Type == jsElementType::Number) {
-				return Double();
-			}if (Type == jsElementType::String)
-				return _wtof(String().c_str());
-			return 0.0;
+			switch (Value.GetType()) {
+				case jsElementType::Float: return Value.Double();
+				case jsElementType::Integer: return (double)Value.Integer();
+				case jsElementType::String: return _wtof(Value.String().c_str());
+				default: 0.0;
+			}
 		}
 
 		long long Item::NumberSafeInteger() {
-			if (Type == jsElementType::Number) {
-				return Integer();
-			}if (Type == jsElementType::String)
-				return _wtoi(this->String().c_str());
-			return 0.0;
+			switch (Value.GetType()) {
+				case jsElementType::Float: return (long long)Value.Double();
+				case jsElementType::Integer: return Value.Integer();
+				case jsElementType::String: return _wtoi(Value.String().c_str());
+				default: 0ll;
+			}
 		}
 
 		std::vector<unsigned char> Item::Data() {
@@ -365,20 +360,19 @@ namespace PVX {
 		}
 
 		std::wstring Item::GetString() const {
-			if (Type== jsElementType::String)
+			if (Value.GetType()== jsElementType::String)
 				return String();
 			return stringify(*this);
 		}
 
 		void Item::Data(const std::vector<unsigned char>& d) {
-			Type = jsElementType::String;
 			Value = PVX::Encode::ToString(PVX::Encode::Base64(d));
 		}
 
 		Item Item::map(std::function<Item(const Item&)> Convert) {
-			if (Type == JSON::jsElementType::Array) {
+			if (Value.GetType() == JSON::jsElementType::Array) {
 				Item ret = JSON::jsElementType::Array;
-				for (auto& i : std::get<std::vector<Item>>(Value)) {
+				for (auto& i : Value.Array()) {
 					ret.push(Convert(i));
 				}
 				return ret;
@@ -387,10 +381,10 @@ namespace PVX {
 		}
 
 		Item Item::map2(std::function<Item(const Item&, int Index)> Convert) {
-			if (Type == JSON::jsElementType::Array) {
+			if (Value.GetType() == JSON::jsElementType::Array) {
 				Item ret = JSON::jsElementType::Array;
 				int Index = 0;
-				for (auto& i : std::get<std::vector<Item>>(Value)) {
+				for (auto& i : Value.Array()) {
 					ret.push(Convert(i, Index++));
 				}
 				return ret;
@@ -399,29 +393,29 @@ namespace PVX {
 		}
 
 		void Item::each(std::function<void(Item&)> Func) {
-			if (Type == JSON::jsElementType::Array) for (auto& i : std::get<std::vector<Item>>(Value)) Func(i);
+			if (Value.GetType() == JSON::jsElementType::Array) for (auto& i : Value.Array()) Func(i);
 		}
 		void Item::each(std::function<void(const Item&)> Func) const {
-			if (Type == JSON::jsElementType::Array) for (auto& i : std::get<std::vector<Item>>(Value)) Func(i);
+			if (Value.GetType() == JSON::jsElementType::Array) for (auto& i : Value.Array()) Func(i);
 		}
 		void Item::each2(std::function<void(Item&, int Index)> Func) {
 			int Index = 0;
-			if (Type == JSON::jsElementType::Array) for (auto& i : std::get<std::vector<Item>>(Value)) Func(i, Index++);
+			if (Value.GetType() == JSON::jsElementType::Array) for (auto& i : Value.Array()) Func(i, Index++);
 		}
 		void Item::each2(std::function<void(const Item&, int Index)> Func) const {
 			int Index = 0;
-			if (Type == JSON::jsElementType::Array) for (auto& i : std::get<std::vector<Item>>(Value)) Func(i, Index++);
+			if (Value.GetType() == JSON::jsElementType::Array) for (auto& i : Value.Array()) Func(i, Index++);
 		}
 		void Item::eachInObject(std::function<void(const std::wstring& Name, Item&)> Func) {
-			if (Type!=jsElementType::Object)return;
-			for (auto& [Name, Value] : std::get<std::map<std::wstring, Item>>(Value)) Func(Name, Value);
+			if (Value.GetType()!=jsElementType::Object)return;
+			for (auto& [Name, Value] : Value.Object()) Func(Name, Value);
 		}
 		void Item::eachInObject(std::function<void(const std::wstring& Name, const Item&)> Func) const {
-			if (Type!=jsElementType::Object)return;
-			for (const auto& [Name, Value] : std::get<std::map<std::wstring, Item>>(Value)) Func(Name, Value);
+			if (Value.GetType()!=jsElementType::Object)return;
+			for (const auto& [Name, Value] : Value.Object()) Func(Name, Value);
 		}
 		Item Item::GroupBy(std::function<std::wstring(const Item&)> Func) {
-			if (Type!=jsElementType::Array) return jsElementType::Undefined;
+			if (Value.GetType()!=jsElementType::Array) return jsElementType::Undefined;
 			Item ret = jsElementType::Object;
 			each([&](const Item& it) {
 				std::wstring Name = Func(it);
@@ -432,9 +426,9 @@ namespace PVX {
 		}
 
 		Item Item::filter(std::function<int(const Item&)> Test) {
-			if (Type == JSON::jsElementType::Array) {
+			if (Value.GetType() == JSON::jsElementType::Array) {
 				Item ret = JSON::jsElementType::Array;
-				for (auto& i : std::get<std::vector<Item>>(Value)) {
+				for (auto& i : Value.Array()) {
 					if (Test(i))
 						ret.push(i);
 				}
@@ -443,35 +437,38 @@ namespace PVX {
 			return jsElementType::Undefined;
 		}
 		Item Item::find(std::function<int(const Item&)> Test, size_t Start) {
-			if (Type == JSON::jsElementType::Array) for (auto i = Start; i < std::get<std::vector<Item>>(Value).size(); i++) if (Test(std::get<std::vector<Item>>(Value)[i])) return std::get<std::vector<Item>>(Value)[i];
+			auto& Array = Value.Array();
+			if (Value.GetType() == JSON::jsElementType::Array) for (auto i = Start; i < Array.size(); i++) if (Test(Array[i])) return Array[i];
 			return jsElementType::Undefined;
 		}
 
 		int Item::findIndex(std::function<int(const Item&)> Test, size_t Start) {
-			if (Type == JSON::jsElementType::Array) for (auto i = Start; i < std::get<std::vector<Item>>(Value).size(); i++) if (Test(std::get<std::vector<Item>>(Value)[i])) return i;
+			auto& Array = Value.Array();
+			if (Value.GetType() == JSON::jsElementType::Array) for (auto i = Start; i < Array.size(); i++) if (Test(Array[i])) return i;
 			return -1;
 		}
 
 		Item Item::sort(std::function<int(Item&, Item&)> Compare) {
-			if (Type == JSON::jsElementType::Array) {
+			if (Value.GetType() == JSON::jsElementType::Array) {
 				Item ret = Copy();
-				std::sort(std::get<std::vector<Item>>(ret.Value).begin(), std::get<std::vector<Item>>(ret.Value).end(), Compare);
+				std::sort(ret.Value.Array().begin(), ret.Value.Array().end(), Compare);
 				return ret;
 			}
 			return jsElementType::Undefined;
 		}
 
 		Item Item::Copy() {
-			Item ret = Type;
+			Item ret = Value.GetType();
 			ret.Value = Value;
 			return ret;
 		}
 
 		Item Item::DeepCopy() {
-			switch (Type) {
+			switch (Value.GetType()) {
 				case PVX::JSON::jsElementType::Undefined:
 				case PVX::JSON::jsElementType::Null:
-				case PVX::JSON::jsElementType::Number:
+				case PVX::JSON::jsElementType::Float:
+				case PVX::JSON::jsElementType::Integer:
 				case PVX::JSON::jsElementType::String:
 				case PVX::JSON::jsElementType::Boolean:
 					return (*this);
@@ -479,8 +476,8 @@ namespace PVX {
 					return map([](auto x) { return x.DeepCopy(); });
 					break;
 				case PVX::JSON::jsElementType::Object: {
-					Item ret = Type;
-					for (auto& [k, v]: std::get<std::map<std::wstring, Item>>(Value)) {
+					Item ret = Value.GetType();
+					for (auto& [k, v]: Value.Object()) {
 						ret[k] = v.DeepCopy();
 					}
 					return ret;
@@ -489,11 +486,12 @@ namespace PVX {
 			return PVX::JSON::jsElementType::Undefined;
 		}
 		Item Item::DeepReducedCopy() {
-			switch (Type) {
+			switch (Value.GetType()) {
 				case PVX::JSON::jsElementType::Undefined:
 				case PVX::JSON::jsElementType::Null:
 					return jsElementType::Undefined;
-				case PVX::JSON::jsElementType::Number:
+				case PVX::JSON::jsElementType::Float:
+				case PVX::JSON::jsElementType::Integer:
 				case PVX::JSON::jsElementType::String:
 				case PVX::JSON::jsElementType::Boolean:
 					if (IsEmpty()) return jsElementType::Undefined;
@@ -502,9 +500,9 @@ namespace PVX {
 				{
 					Item ret = jsElementType::Array;
 					int count = 0;
-					for (auto& x: std::get<std::vector<Item>>(Value)) {
+					for (auto& x: Value.Array()) {
 						auto y = x.DeepReducedCopy();
-						count += y.Type == jsElementType::Undefined;
+						count += y.Type() == jsElementType::Undefined;
 						ret.push(y);
 					}
 					if (count == length()) return jsElementType::Undefined;
@@ -512,9 +510,9 @@ namespace PVX {
 				}
 				case PVX::JSON::jsElementType::Object: {
 					Item ret = jsElementType::Object;
-					for (auto& [k, v]: std::get<std::map<std::wstring, Item>>(Value)) {
+					for (auto& [k, v]: Value.Object()) {
 						auto x = v.DeepReducedCopy();
-						if (x.Type != jsElementType::Undefined)
+						if (x.Type() != jsElementType::Undefined)
 							ret[k] = x;
 					}
 					return ret;
@@ -523,32 +521,18 @@ namespace PVX {
 			return PVX::JSON::jsElementType::Undefined;
 		}
 
-		Item& Item::Cache() {
-			return *cache;
-		}
-
-		Item& Item::Cache(const std::string& str) {
-			cache = &((*this)[str]);
-			return *cache;
-		}
-
-		Item& Item::Cache(const std::wstring& str) {
-			cache = &((*this)[str]);
-			return *cache;
-		}
-
 		Item& Item::Merge(const Item& With) {
-			if (this->Type == jsElementType::Undefined) {
+			if (this->Type() == jsElementType::Undefined) {
 				(*this) = With;
 				return *this;
 			}
-			if (this->Type == With.Type) {
-				if (this->Type == JSON::jsElementType::Object) {
-					for (auto& it : std::get<std::map<std::wstring, Item>>(With.Value))
+			if (this->Type() == With.Type()) {
+				if (this->Type() == JSON::jsElementType::Object) {
+					for (auto& it : With.Value.Object())
 						(*this)[it.first].Merge(it.second);
-				} else if (this->Type == JSON::jsElementType::Array) {
-					for (auto& it : std::get<std::vector<Item>>(With.Value))
-						std::get<std::vector<Item>>(Value).push_back(it);
+				} else if (this->Type() == JSON::jsElementType::Array) {
+					for (auto& it : With.Value.Array())
+						push(it);
 				}
 			}
 			return *this;
@@ -564,17 +548,15 @@ namespace PVX {
 			std::wstring colon = Format ? L": " : L":";
 
 			std::wstringstream ret;
-			switch (obj.Type) {
+			switch (obj.Type()) {
 				case jsElementType::Undefined:
 					return L"undefined";
 				case jsElementType::Null:
 					return L"null";
-				case jsElementType::Number:
-					if (std::holds_alternative<double>(obj.Value)) {
-						return std::to_wstring((long double)obj.Double());
-					} else {
-						return std::to_wstring(obj.Integer());
-					}
+				case jsElementType::Float:
+					return std::to_wstring((long double)obj.Double());
+				case jsElementType::Integer:
+					return std::to_wstring(obj.Integer());
 				case jsElementType::Boolean:
 					return obj.Boolean() ? L"true" : L"false";
 				case jsElementType::String:
@@ -582,15 +564,15 @@ namespace PVX {
 				case jsElementType::Array:
 					ret << "[";
 					{
-						auto& Array = std::get<std::vector<Item>>(obj.Value);
+						auto& Array = obj.Value.Array();
 						if (Array.size()) {
 							size_t i = 0;
-							while (i< Array.size() && Array[i].Type==jsElementType::Undefined)i++;
+							while (i< Array.size() && Array[i].Type()==jsElementType::Undefined)i++;
 							ret << Lvl1 << stringify(Array[i], level + 1); i++;
-							while (i< Array.size() && Array[i].Type==jsElementType::Undefined)i++;
+							while (i< Array.size() && Array[i].Type()==jsElementType::Undefined)i++;
 							for (; i < Array.size(); i++) {
 								ret << "," << Lvl1 << stringify(Array[i], level + 1);
-								while (i< Array.size() && Array[i].Type==jsElementType::Undefined)i++;
+								while (i< Array.size() && Array[i].Type()==jsElementType::Undefined)i++;
 							}
 						}
 					}
@@ -599,10 +581,10 @@ namespace PVX {
 				case jsElementType::Object:
 				{
 					ret << "{";
-					auto& Object = std::get<std::map<std::wstring, Item>>(obj.Value);
+					auto& Object = obj.Value.Object();
 					auto iter = Object.begin();
 
-					while (iter!=Object.end() && iter->second.Type == jsElementType::Undefined) iter++;
+					while (iter!=Object.end() && iter->second.Type() == jsElementType::Undefined) iter++;
 
 					if (iter != Object.end()) {
 						ret << Lvl1 << JsonString(iter->first) << colon << stringify(iter->second, level + 1, Format);
@@ -610,7 +592,7 @@ namespace PVX {
 					}
 
 					for (; iter != Object.end(); ++iter) {
-						if (iter->second.Type != jsElementType::Undefined)
+						if (iter->second.Type() != jsElementType::Undefined)
 							ret << "," << Lvl1 << JsonString(iter->first) << colon << stringify(iter->second, level + 1, Format);
 					}
 

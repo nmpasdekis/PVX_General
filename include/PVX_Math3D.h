@@ -1766,7 +1766,6 @@ namespace PVX {
 	}
 
 	inline void MatrixTranspose(Matrix4x4& m) {
-		float t;
 		std::swap(m.m01, m.m10);
 		std::swap(m.m02, m.m20);
 		std::swap(m.m03, m.m30);

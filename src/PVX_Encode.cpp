@@ -3,7 +3,7 @@
 
 using namespace std;
 
-static wchar_t Windows1253_lut[] = {
+constexpr wchar_t Windows1253_lut[] = {
 	0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008, 0x0009, 0x000A, 0x000B, 0x000C, 0x000D, 0x000E, 0x000F,
 	0x0010, 0x0011, 0x0012, 0x0013, 0x0014, 0x0015, 0x0016, 0x0017, 0x0018, 0x0019, 0x001A, 0x001B, 0x001C, 0x001D, 0x001E, 0x001F,
 	0x0020, 0x0021, 0x0022, 0x0023, 0x0024, 0x0025, 0x0026, 0x0027, 0x0028, 0x0029, 0x002A, 0x002B, 0x002C, 0x002D, 0x002E, 0x002F,
@@ -29,7 +29,7 @@ typedef union uriType {
 	};
 } uriType;
 
-static uriType uri_lut[] = {
+constexpr uriType uri_lut[] = {
 	{ 0x30302503 },{ 0x31302503 },{ 0x32302503 },{ 0x33302503 },{ 0x34302503 },{ 0x35302503 },{ 0x36302503 },{ 0x37302503 },{ 0x38302503 },{ 0x39302503 },{ 0x41302503 },{ 0x42302503 },{ 0x43302503 },{ 0x44302503 },{ 0x45302503 },{ 0x46302503 },
 	{ 0x30312503 },{ 0x31312503 },{ 0x32312503 },{ 0x33312503 },{ 0x34312503 },{ 0x35312503 },{ 0x36312503 },{ 0x37312503 },{ 0x38312503 },{ 0x39312503 },{ 0x41312503 },{ 0x42312503 },{ 0x43312503 },{ 0x44312503 },{ 0x45312503 },{ 0x46312503 },
 	{ 0x30322503 },{ 0x31322503 },{ 0x32322503 },{ 0x33322503 },{ 0x34322503 },{ 0x35322503 },{ 0x36322503 },{ 0x37322503 },{ 0x38322503 },{ 0x39322503 },{ 0x41322503 },{ 0x42322503 },{ 0x43322503 },{ 0x00002D01 },{ 0x00002E01 },{ 0x46322503 },
@@ -56,7 +56,7 @@ typedef union {
 	};
 }Wide2Utf;
 
-static Wide2Utf Wide2Utf_lut[65536]{
+constexpr Wide2Utf Wide2Utf_lut[65536]{
 	{ 0x00000001 },{ 0x00000101 },{ 0x00000201 },{ 0x00000301 },{ 0x00000401 },{ 0x00000501 },{ 0x00000601 },{ 0x00000701 },{ 0x00000801 },{ 0x00000901 },{ 0x00000A01 },{ 0x00000B01 },{ 0x00000C01 },{ 0x00000D01 },{ 0x00000E01 },{ 0x00000F01 },{ 0x00001001 },{ 0x00001101 },{ 0x00001201 },{ 0x00001301 },{ 0x00001401 },{ 0x00001501 },{ 0x00001601 },{ 0x00001701 },{ 0x00001801 },{ 0x00001901 },{ 0x00001A01 },{ 0x00001B01 },{ 0x00001C01 },{ 0x00001D01 },{ 0x00001E01 },{ 0x00001F01 },{ 0x00002001 },{ 0x00002101 },{ 0x00002201 },{ 0x00002301 },{ 0x00002401 },{ 0x00002501 },{ 0x00002601 },{ 0x00002701 },{ 0x00002801 },{ 0x00002901 },{ 0x00002A01 },{ 0x00002B01 },{ 0x00002C01 },{ 0x00002D01 },{ 0x00002E01 },{ 0x00002F01 },{ 0x00003001 },{ 0x00003101 },{ 0x00003201 },{ 0x00003301 },{ 0x00003401 },{ 0x00003501 },{ 0x00003601 },{ 0x00003701 },{ 0x00003801 },{ 0x00003901 },{ 0x00003A01 },{ 0x00003B01 },{ 0x00003C01 },{ 0x00003D01 },{ 0x00003E01 },{ 0x00003F01 },{ 0x00004001 },{ 0x00004101 },{ 0x00004201 },{ 0x00004301 },{ 0x00004401 },{ 0x00004501 },{ 0x00004601 },{ 0x00004701 },{ 0x00004801 },{ 0x00004901 },{ 0x00004A01 },{ 0x00004B01 },{ 0x00004C01 },{ 0x00004D01 },{ 0x00004E01 },{ 0x00004F01 },{ 0x00005001 },{ 0x00005101 },{ 0x00005201 },{ 0x00005301 },{ 0x00005401 },{ 0x00005501 },{ 0x00005601 },{ 0x00005701 },{ 0x00005801 },{ 0x00005901 },{ 0x00005A01 },{ 0x00005B01 },{ 0x00005C01 },{ 0x00005D01 },{ 0x00005E01 },{ 0x00005F01 },{ 0x00006001 },{ 0x00006101 },{ 0x00006201 },{ 0x00006301 },{ 0x00006401 },{ 0x00006501 },{ 0x00006601 },{ 0x00006701 },{ 0x00006801 },{ 0x00006901 },{ 0x00006A01 },{ 0x00006B01 },{ 0x00006C01 },{ 0x00006D01 },{ 0x00006E01 },{ 0x00006F01 },{ 0x00007001 },{ 0x00007101 },{ 0x00007201 },{ 0x00007301 },{ 0x00007401 },{ 0x00007501 },{ 0x00007601 },{ 0x00007701 },{ 0x00007801 },{ 0x00007901 },{ 0x00007A01 },{ 0x00007B01 },{ 0x00007C01 },{ 0x00007D01 },{ 0x00007E01 },{ 0x00007F01 },{ 0x0080C202 },{ 0x0081C202 },{ 0x0082C202 },{ 0x0083C202 },{ 0x0084C202 },{ 0x0085C202 },{ 0x0086C202 },{ 0x0087C202 },{ 0x0088C202 },{ 0x0089C202 },{ 0x008AC202 },{ 0x008BC202 },{ 0x008CC202 },{ 0x008DC202 },{ 0x008EC202 },{ 0x008FC202 },{ 0x0090C202 },{ 0x0091C202 },{ 0x0092C202 },{ 0x0093C202 },{ 0x0094C202 },{ 0x0095C202 },{ 0x0096C202 },{ 0x0097C202 },{ 0x0098C202 },{ 0x0099C202 },{ 0x009AC202 },{ 0x009BC202 },{ 0x009CC202 },{ 0x009DC202 },{ 0x009EC202 },{ 0x009FC202 },{ 0x00A0C202 },{ 0x00A1C202 },{ 0x00A2C202 },{ 0x00A3C202 },{ 0x00A4C202 },{ 0x00A5C202 },{ 0x00A6C202 },{ 0x00A7C202 },{ 0x00A8C202 },{ 0x00A9C202 },{ 0x00AAC202 },{ 0x00ABC202 },{ 0x00ACC202 },{ 0x00ADC202 },{ 0x00AEC202 },{ 0x00AFC202 },{ 0x00B0C202 },{ 0x00B1C202 },{ 0x00B2C202 },{ 0x00B3C202 },{ 0x00B4C202 },{ 0x00B5C202 },{ 0x00B6C202 },{ 0x00B7C202 },{ 0x00B8C202 },{ 0x00B9C202 },{ 0x00BAC202 },{ 0x00BBC202 },{ 0x00BCC202 },{ 0x00BDC202 },{ 0x00BEC202 },{ 0x00BFC202 },{ 0x0080C302 },{ 0x0081C302 },{ 0x0082C302 },{ 0x0083C302 },{ 0x0084C302 },{ 0x0085C302 },{ 0x0086C302 },{ 0x0087C302 },{ 0x0088C302 },{ 0x0089C302 },{ 0x008AC302 },{ 0x008BC302 },{ 0x008CC302 },{ 0x008DC302 },{ 0x008EC302 },{ 0x008FC302 },{ 0x0090C302 },{ 0x0091C302 },{ 0x0092C302 },{ 0x0093C302 },{ 0x0094C302 },{ 0x0095C302 },{ 0x0096C302 },{ 0x0097C302 },{ 0x0098C302 },{ 0x0099C302 },{ 0x009AC302 },{ 0x009BC302 },{ 0x009CC302 },{ 0x009DC302 },{ 0x009EC302 },{ 0x009FC302 },{ 0x00A0C302 },{ 0x00A1C302 },{ 0x00A2C302 },{ 0x00A3C302 },{ 0x00A4C302 },{ 0x00A5C302 },{ 0x00A6C302 },{ 0x00A7C302 },{ 0x00A8C302 },{ 0x00A9C302 },{ 0x00AAC302 },{ 0x00ABC302 },{ 0x00ACC302 },{ 0x00ADC302 },{ 0x00AEC302 },{ 0x00AFC302 },{ 0x00B0C302 },{ 0x00B1C302 },{ 0x00B2C302 },{ 0x00B3C302 },{ 0x00B4C302 },{ 0x00B5C302 },{ 0x00B6C302 },{ 0x00B7C302 },{ 0x00B8C302 },{ 0x00B9C302 },{ 0x00BAC302 },{ 0x00BBC302 },{ 0x00BCC302 },{ 0x00BDC302 },{ 0x00BEC302 },{ 0x00BFC302 },
 	{ 0x0080C402 },{ 0x0081C402 },{ 0x0082C402 },{ 0x0083C402 },{ 0x0084C402 },{ 0x0085C402 },{ 0x0086C402 },{ 0x0087C402 },{ 0x0088C402 },{ 0x0089C402 },{ 0x008AC402 },{ 0x008BC402 },{ 0x008CC402 },{ 0x008DC402 },{ 0x008EC402 },{ 0x008FC402 },{ 0x0090C402 },{ 0x0091C402 },{ 0x0092C402 },{ 0x0093C402 },{ 0x0094C402 },{ 0x0095C402 },{ 0x0096C402 },{ 0x0097C402 },{ 0x0098C402 },{ 0x0099C402 },{ 0x009AC402 },{ 0x009BC402 },{ 0x009CC402 },{ 0x009DC402 },{ 0x009EC402 },{ 0x009FC402 },{ 0x00A0C402 },{ 0x00A1C402 },{ 0x00A2C402 },{ 0x00A3C402 },{ 0x00A4C402 },{ 0x00A5C402 },{ 0x00A6C402 },{ 0x00A7C402 },{ 0x00A8C402 },{ 0x00A9C402 },{ 0x00AAC402 },{ 0x00ABC402 },{ 0x00ACC402 },{ 0x00ADC402 },{ 0x00AEC402 },{ 0x00AFC402 },{ 0x00B0C402 },{ 0x00B1C402 },{ 0x00B2C402 },{ 0x00B3C402 },{ 0x00B4C402 },{ 0x00B5C402 },{ 0x00B6C402 },{ 0x00B7C402 },{ 0x00B8C402 },{ 0x00B9C402 },{ 0x00BAC402 },{ 0x00BBC402 },{ 0x00BCC402 },{ 0x00BDC402 },{ 0x00BEC402 },{ 0x00BFC402 },{ 0x0080C502 },{ 0x0081C502 },{ 0x0082C502 },{ 0x0083C502 },{ 0x0084C502 },{ 0x0085C502 },{ 0x0086C502 },{ 0x0087C502 },{ 0x0088C502 },{ 0x0089C502 },{ 0x008AC502 },{ 0x008BC502 },{ 0x008CC502 },{ 0x008DC502 },{ 0x008EC502 },{ 0x008FC502 },{ 0x0090C502 },{ 0x0091C502 },{ 0x0092C502 },{ 0x0093C502 },{ 0x0094C502 },{ 0x0095C502 },{ 0x0096C502 },{ 0x0097C502 },{ 0x0098C502 },{ 0x0099C502 },{ 0x009AC502 },{ 0x009BC502 },{ 0x009CC502 },{ 0x009DC502 },{ 0x009EC502 },{ 0x009FC502 },{ 0x00A0C502 },{ 0x00A1C502 },{ 0x00A2C502 },{ 0x00A3C502 },{ 0x00A4C502 },{ 0x00A5C502 },{ 0x00A6C502 },{ 0x00A7C502 },{ 0x00A8C502 },{ 0x00A9C502 },{ 0x00AAC502 },{ 0x00ABC502 },{ 0x00ACC502 },{ 0x00ADC502 },{ 0x00AEC502 },{ 0x00AFC502 },{ 0x00B0C502 },{ 0x00B1C502 },{ 0x00B2C502 },{ 0x00B3C502 },{ 0x00B4C502 },{ 0x00B5C502 },{ 0x00B6C502 },{ 0x00B7C502 },{ 0x00B8C502 },{ 0x00B9C502 },{ 0x00BAC502 },{ 0x00BBC502 },{ 0x00BCC502 },{ 0x00BDC502 },{ 0x00BEC502 },{ 0x00BFC502 },{ 0x0080C602 },{ 0x0081C602 },{ 0x0082C602 },{ 0x0083C602 },{ 0x0084C602 },{ 0x0085C602 },{ 0x0086C602 },{ 0x0087C602 },{ 0x0088C602 },{ 0x0089C602 },{ 0x008AC602 },{ 0x008BC602 },{ 0x008CC602 },{ 0x008DC602 },{ 0x008EC602 },{ 0x008FC602 },{ 0x0090C602 },{ 0x0091C602 },{ 0x0092C602 },{ 0x0093C602 },{ 0x0094C602 },{ 0x0095C602 },{ 0x0096C602 },{ 0x0097C602 },{ 0x0098C602 },{ 0x0099C602 },{ 0x009AC602 },{ 0x009BC602 },{ 0x009CC602 },{ 0x009DC602 },{ 0x009EC602 },{ 0x009FC602 },{ 0x00A0C602 },{ 0x00A1C602 },{ 0x00A2C602 },{ 0x00A3C602 },{ 0x00A4C602 },{ 0x00A5C602 },{ 0x00A6C602 },{ 0x00A7C602 },{ 0x00A8C602 },{ 0x00A9C602 },{ 0x00AAC602 },{ 0x00ABC602 },{ 0x00ACC602 },{ 0x00ADC602 },{ 0x00AEC602 },{ 0x00AFC602 },{ 0x00B0C602 },{ 0x00B1C602 },{ 0x00B2C602 },{ 0x00B3C602 },{ 0x00B4C602 },{ 0x00B5C602 },{ 0x00B6C602 },{ 0x00B7C602 },{ 0x00B8C602 },{ 0x00B9C602 },{ 0x00BAC602 },{ 0x00BBC602 },{ 0x00BCC602 },{ 0x00BDC602 },{ 0x00BEC602 },{ 0x00BFC602 },{ 0x0080C702 },{ 0x0081C702 },{ 0x0082C702 },{ 0x0083C702 },{ 0x0084C702 },{ 0x0085C702 },{ 0x0086C702 },{ 0x0087C702 },{ 0x0088C702 },{ 0x0089C702 },{ 0x008AC702 },{ 0x008BC702 },{ 0x008CC702 },{ 0x008DC702 },{ 0x008EC702 },{ 0x008FC702 },{ 0x0090C702 },{ 0x0091C702 },{ 0x0092C702 },{ 0x0093C702 },{ 0x0094C702 },{ 0x0095C702 },{ 0x0096C702 },{ 0x0097C702 },{ 0x0098C702 },{ 0x0099C702 },{ 0x009AC702 },{ 0x009BC702 },{ 0x009CC702 },{ 0x009DC702 },{ 0x009EC702 },{ 0x009FC702 },{ 0x00A0C702 },{ 0x00A1C702 },{ 0x00A2C702 },{ 0x00A3C702 },{ 0x00A4C702 },{ 0x00A5C702 },{ 0x00A6C702 },{ 0x00A7C702 },{ 0x00A8C702 },{ 0x00A9C702 },{ 0x00AAC702 },{ 0x00ABC702 },{ 0x00ACC702 },{ 0x00ADC702 },{ 0x00AEC702 },{ 0x00AFC702 },{ 0x00B0C702 },{ 0x00B1C702 },{ 0x00B2C702 },{ 0x00B3C702 },{ 0x00B4C702 },{ 0x00B5C702 },{ 0x00B6C702 },{ 0x00B7C702 },{ 0x00B8C702 },{ 0x00B9C702 },{ 0x00BAC702 },{ 0x00BBC702 },{ 0x00BCC702 },{ 0x00BDC702 },{ 0x00BEC702 },{ 0x00BFC702 },
 	{ 0x0080C802 },{ 0x0081C802 },{ 0x0082C802 },{ 0x0083C802 },{ 0x0084C802 },{ 0x0085C802 },{ 0x0086C802 },{ 0x0087C802 },{ 0x0088C802 },{ 0x0089C802 },{ 0x008AC802 },{ 0x008BC802 },{ 0x008CC802 },{ 0x008DC802 },{ 0x008EC802 },{ 0x008FC802 },{ 0x0090C802 },{ 0x0091C802 },{ 0x0092C802 },{ 0x0093C802 },{ 0x0094C802 },{ 0x0095C802 },{ 0x0096C802 },{ 0x0097C802 },{ 0x0098C802 },{ 0x0099C802 },{ 0x009AC802 },{ 0x009BC802 },{ 0x009CC802 },{ 0x009DC802 },{ 0x009EC802 },{ 0x009FC802 },{ 0x00A0C802 },{ 0x00A1C802 },{ 0x00A2C802 },{ 0x00A3C802 },{ 0x00A4C802 },{ 0x00A5C802 },{ 0x00A6C802 },{ 0x00A7C802 },{ 0x00A8C802 },{ 0x00A9C802 },{ 0x00AAC802 },{ 0x00ABC802 },{ 0x00ACC802 },{ 0x00ADC802 },{ 0x00AEC802 },{ 0x00AFC802 },{ 0x00B0C802 },{ 0x00B1C802 },{ 0x00B2C802 },{ 0x00B3C802 },{ 0x00B4C802 },{ 0x00B5C802 },{ 0x00B6C802 },{ 0x00B7C802 },{ 0x00B8C802 },{ 0x00B9C802 },{ 0x00BAC802 },{ 0x00BBC802 },{ 0x00BCC802 },{ 0x00BDC802 },{ 0x00BEC802 },{ 0x00BFC802 },{ 0x0080C902 },{ 0x0081C902 },{ 0x0082C902 },{ 0x0083C902 },{ 0x0084C902 },{ 0x0085C902 },{ 0x0086C902 },{ 0x0087C902 },{ 0x0088C902 },{ 0x0089C902 },{ 0x008AC902 },{ 0x008BC902 },{ 0x008CC902 },{ 0x008DC902 },{ 0x008EC902 },{ 0x008FC902 },{ 0x0090C902 },{ 0x0091C902 },{ 0x0092C902 },{ 0x0093C902 },{ 0x0094C902 },{ 0x0095C902 },{ 0x0096C902 },{ 0x0097C902 },{ 0x0098C902 },{ 0x0099C902 },{ 0x009AC902 },{ 0x009BC902 },{ 0x009CC902 },{ 0x009DC902 },{ 0x009EC902 },{ 0x009FC902 },{ 0x00A0C902 },{ 0x00A1C902 },{ 0x00A2C902 },{ 0x00A3C902 },{ 0x00A4C902 },{ 0x00A5C902 },{ 0x00A6C902 },{ 0x00A7C902 },{ 0x00A8C902 },{ 0x00A9C902 },{ 0x00AAC902 },{ 0x00ABC902 },{ 0x00ACC902 },{ 0x00ADC902 },{ 0x00AEC902 },{ 0x00AFC902 },{ 0x00B0C902 },{ 0x00B1C902 },{ 0x00B2C902 },{ 0x00B3C902 },{ 0x00B4C902 },{ 0x00B5C902 },{ 0x00B6C902 },{ 0x00B7C902 },{ 0x00B8C902 },{ 0x00B9C902 },{ 0x00BAC902 },{ 0x00BBC902 },{ 0x00BCC902 },{ 0x00BDC902 },{ 0x00BEC902 },{ 0x00BFC902 },{ 0x0080CA02 },{ 0x0081CA02 },{ 0x0082CA02 },{ 0x0083CA02 },{ 0x0084CA02 },{ 0x0085CA02 },{ 0x0086CA02 },{ 0x0087CA02 },{ 0x0088CA02 },{ 0x0089CA02 },{ 0x008ACA02 },{ 0x008BCA02 },{ 0x008CCA02 },{ 0x008DCA02 },{ 0x008ECA02 },{ 0x008FCA02 },{ 0x0090CA02 },{ 0x0091CA02 },{ 0x0092CA02 },{ 0x0093CA02 },{ 0x0094CA02 },{ 0x0095CA02 },{ 0x0096CA02 },{ 0x0097CA02 },{ 0x0098CA02 },{ 0x0099CA02 },{ 0x009ACA02 },{ 0x009BCA02 },{ 0x009CCA02 },{ 0x009DCA02 },{ 0x009ECA02 },{ 0x009FCA02 },{ 0x00A0CA02 },{ 0x00A1CA02 },{ 0x00A2CA02 },{ 0x00A3CA02 },{ 0x00A4CA02 },{ 0x00A5CA02 },{ 0x00A6CA02 },{ 0x00A7CA02 },{ 0x00A8CA02 },{ 0x00A9CA02 },{ 0x00AACA02 },{ 0x00ABCA02 },{ 0x00ACCA02 },{ 0x00ADCA02 },{ 0x00AECA02 },{ 0x00AFCA02 },{ 0x00B0CA02 },{ 0x00B1CA02 },{ 0x00B2CA02 },{ 0x00B3CA02 },{ 0x00B4CA02 },{ 0x00B5CA02 },{ 0x00B6CA02 },{ 0x00B7CA02 },{ 0x00B8CA02 },{ 0x00B9CA02 },{ 0x00BACA02 },{ 0x00BBCA02 },{ 0x00BCCA02 },{ 0x00BDCA02 },{ 0x00BECA02 },{ 0x00BFCA02 },{ 0x0080CB02 },{ 0x0081CB02 },{ 0x0082CB02 },{ 0x0083CB02 },{ 0x0084CB02 },{ 0x0085CB02 },{ 0x0086CB02 },{ 0x0087CB02 },{ 0x0088CB02 },{ 0x0089CB02 },{ 0x008ACB02 },{ 0x008BCB02 },{ 0x008CCB02 },{ 0x008DCB02 },{ 0x008ECB02 },{ 0x008FCB02 },{ 0x0090CB02 },{ 0x0091CB02 },{ 0x0092CB02 },{ 0x0093CB02 },{ 0x0094CB02 },{ 0x0095CB02 },{ 0x0096CB02 },{ 0x0097CB02 },{ 0x0098CB02 },{ 0x0099CB02 },{ 0x009ACB02 },{ 0x009BCB02 },{ 0x009CCB02 },{ 0x009DCB02 },{ 0x009ECB02 },{ 0x009FCB02 },{ 0x00A0CB02 },{ 0x00A1CB02 },{ 0x00A2CB02 },{ 0x00A3CB02 },{ 0x00A4CB02 },{ 0x00A5CB02 },{ 0x00A6CB02 },{ 0x00A7CB02 },{ 0x00A8CB02 },{ 0x00A9CB02 },{ 0x00AACB02 },{ 0x00ABCB02 },{ 0x00ACCB02 },{ 0x00ADCB02 },{ 0x00AECB02 },{ 0x00AFCB02 },{ 0x00B0CB02 },{ 0x00B1CB02 },{ 0x00B2CB02 },{ 0x00B3CB02 },{ 0x00B4CB02 },{ 0x00B5CB02 },{ 0x00B6CB02 },{ 0x00B7CB02 },{ 0x00B8CB02 },{ 0x00B9CB02 },{ 0x00BACB02 },{ 0x00BBCB02 },{ 0x00BCCB02 },{ 0x00BDCB02 },{ 0x00BECB02 },{ 0x00BFCB02 },
@@ -338,14 +338,14 @@ namespace PVX {
 				ret.push_back(c);
 			return ret;
 		}
-		string Base64(const void * data, int size) {
-			const char * map =
+		string Base64(const void * data, size_t size) {
+			constexpr char map[] =
 				"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 				"abcdefghijklmnopqrstuvwxyz"
 				"0123456789+/";
 
-			int i, j, k, sz = ((size + 2) / 3) << 2;
-			int padding = (3 - ((size) % 3)) % 3;
+			size_t i, j, k, sz = ((size + 2) / 3) << 2;
+			size_t padding = (3 - ((size) % 3)) % 3;
 			string ret;
 			ret.resize(sz);
 			char * out = &ret[0];
@@ -378,13 +378,13 @@ namespace PVX {
 		string Base64(const vector<unsigned char> & data) {
 			return Base64(data.data(), data.size());
 		}
-		string Base64Url(const void* data, int size, bool NoPadding) {
-			const char* map =
+		string Base64Url(const void* data, size_t size, bool NoPadding) {
+			constexpr char map[] =
 				"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 				"abcdefghijklmnopqrstuvwxyz"
 				"0123456789-_";
 
-			int i, j, k, sz = ((size + 2) / 3) << 2;
+			size_t i, j, k, sz = ((size + 2) / 3) << 2;
 			size_t padding = (3 - ((size) % 3)) % 3;
 			string ret;
 			ret.resize(sz - (NoPadding ? padding : 0ll));
@@ -418,19 +418,19 @@ namespace PVX {
 			return ret;
 		}
 
-		int UTF_Length(const wchar_t * Str) {
-			int len = 0;
-			for (int i = 0; Str[i]; i++)
+		size_t UTF_Length(const wchar_t * Str) {
+			size_t len = 0;
+			for (auto i = 0; Str[i]; i++)
 				len += Wide2Utf_lut[Str[i]].size;
 			return len;
 		}
-		int UTF_Length(const std::wstring & Str) {
+		size_t UTF_Length(const std::wstring & Str) {
 			return UTF_Length(Str.c_str());
 		}
-		int UTF(unsigned char * Data, const wchar_t * Str) {
-			int i, j, len = 0;
+		size_t UTF(unsigned char * Data, const wchar_t * Str) {
+			size_t i, j, len = 0;
 			for (i = 0; Str[i]; i++) {
-				Wide2Utf & u = Wide2Utf_lut[Str[i]];
+				const Wide2Utf & u = Wide2Utf_lut[Str[i]];
 				for (j = 0; j < u.size; j++) {
 					*Data = u.data[j];
 					Data++;
@@ -459,7 +459,7 @@ namespace PVX {
 			if (sz)UTF(&utf[0], Text.c_str());
 		}
 
-		int Uri_Length(const char * u) {
+		size_t Uri_Length(const char * u) {
 			int ret = 0;
 			for (int i = 0; u[i]; i++)
 				ret += uri_lut[(unsigned char)u[i]].size;
@@ -473,8 +473,8 @@ namespace PVX {
 					out[outsize++] = c.data[j];
 			}
 		}
-		int Uri_Length(const char * u, int sz) {
-			int ret = 0;
+		size_t Uri_Length(const char * u, size_t sz) {
+			size_t ret = 0;
 			for (int i = 0; i < sz; i++)
 				ret += uri_lut[(unsigned char)u[i]].size;
 			return ret;
@@ -510,29 +510,25 @@ namespace PVX {
 		std::string Uri(const std::wstring & s) {
 			return UriEncode(UTF(s));
 		}
-		std::string Windows1253_Greek(const std::wstring & data) {
-			wchar_t map[65536];
-			for(int i = 0; i < 65536; i++) map[i] = '?';
-			for(int i = 0; i < 256; i++)
+
+		constexpr auto Windows1253_Greek_map = []() {
+			std::array<wchar_t, 65536> map{ 0 };
+			for (int i = 0; i < 65536; i++) map[i] = '?';
+			for (int i = 0; i < 256; i++)
 				map[Windows1253_lut[i]] = i;
+			return map;
+		}();
+
+		std::string Windows1253_Greek(const std::wstring & data) {
 			std::string ret;
 			ret.reserve(data.size());
 			for(auto c : data)
-				ret.push_back(map[c]);
+				ret.push_back(Windows1253_Greek_map[c]);
 			return ret;
 		}
 	}
 	namespace Decode {
-		//static unsigned int getBase64Index(unsigned int b){
-		//	if (b >= 'A'&&b <= 'Z')return b - 'A';
-		//	if (b >= 'a'&&b <= 'z')return b - 'a' + 26;
-		//	if (b >= '0'&&b <= '9')return b - '0' + 52;
-		//	if (b == '+')return 62;
-		//	if (b == '/')return 63;
-		//	return 0;
-		//}
-
-		const std::array<unsigned char, 256> b64Url2decLut = [] {
+		constexpr std::array<unsigned char, 256> b64Url2decLut = [] {
 			std::array<unsigned char, 256> ret{ 0 };
 			const char * map =
 				"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -620,7 +616,7 @@ namespace PVX {
 			return Base64Url(base64.c_str(), base64.size());
 		}
 
-		const unsigned char b64decLut[] = {
+		constexpr unsigned char b64decLut[] = {
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3E, 0x00, 0x00, 0x00, 0x3F,
@@ -630,7 +626,11 @@ namespace PVX {
 			0x00, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
 			0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33, 0x00, 0x00, 0x00, 0x00, 0x00
 		};
-#define getBase64Index(b) (b64decLut[b])
+
+		constexpr unsigned char getBase64Index(int b) {
+			return b64decLut[b];
+		}
+		//#define getBase64Index(b) (b64decLut[b])
 		//#define getBase64Index(b) (((b) >= 'A'&&(b) <= 'Z')?((b) - 'A'):((b) >= 'a'&&(b) <= 'z')?((b) - 'a' + 26):((b) >= '0'&&(b) <= '9')?((b) - '0' + 52):((b) == '+')?62:((b) =='/')?63:0)
 
 		std::string Base64_String(const std::string& base64) {
@@ -801,7 +801,7 @@ namespace PVX {
 					tmp[c++] = s[i];
 				else {
 					i++;
-					tmp[c++] = (map[s[i]] << 4) + map[s[i++ + 1]];
+					tmp[c++] = unsigned char((map[s[i]] << 4) + map[s[i++ + 1]]);
 				}
 			}
 			ret = UTF(tmp, c);
@@ -820,30 +820,20 @@ namespace PVX {
 		}
 		wstring UTF(const vector<unsigned char> & Utf) {
 			const unsigned char * utf = Utf.data();
-			int sz = Utf.size();
+			auto sz = Utf.size();
 			return UTF(utf, sz);
 		}
-		wstring UTF(const unsigned char * Utf, int sz) {
+		wstring UTF(const unsigned char * Utf, size_t sz) {
 			if (!sz)return L"";
 			unsigned char* utf = (unsigned char*)Utf;
 			if (utf[0] == 0xef && utf[1] == 0xbb && utf[2] == 0xbf) {
 				sz -= 3;
 				utf += 3;
 			}
-			//int len = sz;
-			//for (int i = 0; i < sz; i++) {
-			//	len -= ((utf[i] >> 5) == 0x06) || ((utf[i] >> 4) == 0x0e);
-			//	len -= ((utf[i] >> 4) == 0x0e) << 1;
-			//}
 
 			std::wstringstream ret;
-			//wstring sb;
-			//sb.resize(len);
 
-			//wchar_t * ret = &sb[0];
-			int dbg = 0;
-			for (int i = 0; i < sz; i++) {
-				//wchar_t & tmp = *ret;
+			for (auto i = 0; i < sz; i++) {
 				wchar_t tmp;
 				char c1 = utf[i];
 				int Count = 0;
@@ -857,22 +847,17 @@ namespace PVX {
 					i++;
 					tmp = (tmp << 6) | (utf[i] & 0x3f);
 				}
-				//ret++;
-				dbg++;
 				ret << tmp;
 			}
 			return ret.str();
-			//return sb;
 		}
 		void UTF(wstring & out, const vector<unsigned char> & Utf) {
 			out.clear();
 			const unsigned char * utf = Utf.data();
-			int len = Utf.size();
+			auto len = Utf.size();
 			if (len) {
 				int sz = 0;
-				for (int i = 0; i < len; i++) sz += 1 ^ (utf[i] >> 7);
-				//for (int len = 0; utf[len]; len++);
-				//wchar_t * ret = new wchar_t[(len << 1) + 1];
+				for (auto i = 0; i < len; i++) sz += 1 ^ (utf[i] >> 7);
 				out.resize(sz);
 				wchar_t * ret = &out[0];
 				int index = 0;
@@ -894,16 +879,13 @@ namespace PVX {
 					ret[index++] = tmp;
 				}
 				ret[index] = 0;
-				//out.append(ret);
-				//delete ret;
 				return;
 			}
 		}
 		wchar_t * pUTF(const unsigned char * utf) {
 			if (!utf)return 0;
 
-			int outsize = 0;
-			for (int outsize = 0; utf[outsize]; outsize++);
+			auto outsize = strlen((const char*)utf);
 			wchar_t * ret = new wchar_t[outsize + 1];
 			ret[outsize] = 0;
 			int index = 0;
@@ -932,9 +914,9 @@ namespace PVX {
 			wchar_t str[2];
 			wchar_t & ch = str[0];
 			const unsigned char * ansi = Ansi.data();
-			int sz = Ansi.size();
+			auto sz = Ansi.size();
 			str[1] = 0;
-			for (int i = 0; i < sz; i++) {
+			for (auto i = 0; i < sz; i++) {
 				ch = 0;
 				if (ansi[i] & 0x80) {
 					ch = (ansi[i] << 8); i++;

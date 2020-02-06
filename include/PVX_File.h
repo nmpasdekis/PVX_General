@@ -40,7 +40,7 @@ namespace PVX {
 
 		class Text {
 			unsigned char buffer[512];
-			int BufferPosition, BufferSize;
+			size_t BufferPosition, BufferSize;
 			FILE * fin;
 			std::wstring curLine;
 		public:
