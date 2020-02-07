@@ -189,6 +189,10 @@ namespace PVX {
 			}
 			return *this;
 		}
+		Item& Item::operator=(const nullptr_t& n) {
+			Value = nullptr;
+			return *this;
+		}
 		Item& Item::operator=(const int v) {
 			Value = (long long)v;
 			return *this;
@@ -872,6 +876,100 @@ namespace PVX {
 			}
 			if (Stack2.size() == 1) return Stack2[0].val;
 			return jsElementType::Undefined;
+		}
+
+		namespace BSON {
+			double Double(const unsigned char*& cur) {
+				cur += 8;
+				return *(double*)(cur-8);
+			}
+			size_t Size(const unsigned char*& cur) {
+				cur += 4;
+				return (*(int*)(cur-4)) - 4;
+			}
+			int Int(const unsigned char*& cur) {
+				cur += 4;
+				return *(int*)(cur-4);
+			}
+			int Int64(const unsigned char*& cur) {
+				cur += 8;
+				return *(long long*)(cur-8);
+			}
+			int Byte(const unsigned char*& cur) {
+				return *(cur++);
+			}
+			std::wstring String(const unsigned char*& cur) {
+				auto len = strlen((const char*)cur);
+				cur += len + 1;
+				return PVX::Decode::UTF(cur - len - 1, len);
+			}
+			const char* String2(const unsigned char*& cur) {
+				auto len = strlen((const char*)cur);
+				cur += len + 1;
+				return (const char*)(cur - len - 1);
+			}
+
+			std::wstring ReadString(const unsigned char*& cur) {
+				auto sz = Int(cur);
+				return String(cur);
+			}
+			Item ReadArray(const unsigned char*& cur);
+
+			Item ReadObject(const unsigned char*& cur) {
+				auto sz = Size(cur);
+				const unsigned char* End = cur + sz;
+				Item ret = jsElementType::Object;
+				while (cur < End) {
+					auto tp = Byte(cur);
+					auto name = String(cur);
+					switch (tp) {
+						case 0x00: return ret;
+						case 0x01: ret[name] = Double(cur); break;
+						case 0x02: ret[name] = ReadString(cur); break;
+						case 0x03: ret[name] = ReadObject(cur); break;
+						case 0x04: ret[name] = ReadArray(cur); break;
+						case 0x08: ret[name] = (bool)Byte(cur); break;
+						case 0x0A: ret[name] = nullptr; break;
+						case 0x10: ret[name] = Int(cur); break;
+						case 0x12: ret[name] = Int64(cur); break;
+						default: cur = End; return ret;
+					};
+				}
+				return ret;
+			}
+			Item ReadArray(const unsigned char*& cur) {
+				auto sz = Size(cur);
+				const unsigned char* End = cur + sz;
+				Item ret = jsElementType::Array;
+				Item item = jsElementType::Array;
+				while (cur < End) {
+					auto tp = Byte(cur);
+					auto index = atoi(String2(cur));
+					if (ret.length()!=index) ret.getArray().resize(index);
+					switch (tp) {
+						case 0x00: return ret;
+						case 0x01: item = Double(cur); break;
+						case 0x02: item = ReadString(cur); break;
+						case 0x03: item = ReadObject(cur); break;
+						case 0x04: item = ReadArray(cur); break;
+						case 0x08: item = (bool)Byte(cur); break;
+						case 0x0A: item = nullptr; break;
+						case 0x10: item = Int(cur); break;
+						case 0x12: item = Int64(cur); break;
+						default: cur = End; return ret;
+					};
+					item.Value.Bosn() = (BSON_Type)tp;
+					ret.push(item);
+				}
+				return ret;
+			}
+		}
+		Item fromBSON(const std::vector<unsigned char>& Data) {
+			const unsigned char* cur = &Data[0];
+			return BSON::ReadObject(cur);
+		}
+		Item fromBSON(const std::wstring& Data) {
+			return fromBSON(PVX::IO::ReadBinary(Data.c_str()));
 		}
 	}
 }

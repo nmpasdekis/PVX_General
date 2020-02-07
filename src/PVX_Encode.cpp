@@ -338,6 +338,47 @@ namespace PVX {
 				ret.push_back(c);
 			return ret;
 		}
+
+		constexpr char Hex_Map[]{ '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f' };
+
+		std::string ToHex(const std::vector<unsigned char>& Data) {
+			std::string ret;
+			ret.reserve(Data.size()*2);
+			for (auto& byte: Data) {
+				ret.push_back(Hex_Map[byte>>4]);
+				ret.push_back(Hex_Map[byte&0x0f]);
+			}
+			return ret;
+		}
+		std::string ToHexUpper(const std::vector<unsigned char>& Data) {
+			std::string ret;
+			ret.reserve(Data.size()*2);
+			for (auto& byte: Data) {
+				ret.push_back(Hex_Map[byte>>4]);
+				ret.push_back(Hex_Map[byte&0x0f]);
+			}
+			return ret;
+		}
+
+		std::wstring wToHex(const std::vector<unsigned char>& Data) {
+			std::wstring ret;
+			ret.reserve(Data.size()*2);
+			for (auto& byte: Data) {
+				ret.push_back(Hex_Map[byte>>4]);
+				ret.push_back(Hex_Map[byte&0x0f]);
+			}
+			return ret;
+		}
+		std::wstring wToHexUpper(const std::vector<unsigned char>& Data) {
+			std::wstring ret;
+			ret.reserve(Data.size()*2);
+			for (auto& byte: Data) {
+				ret.push_back(Hex_Map[byte>>4]);
+				ret.push_back(Hex_Map[byte&0x0f]);
+			}
+			return ret;
+		}
+
 		string Base64(const void * data, size_t size) {
 			constexpr char map[] =
 				"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -974,6 +1015,35 @@ namespace PVX {
 					}
 					esc = 0;
 				}
+			}
+			return ret;
+		}
+
+		constexpr auto HexMap2 = []() {
+			std::array<unsigned char, 256> map{ 0 };
+			for (int i = 0; i<10; i++) map['0' + i] = i;
+			for (int i = 0; i<6; i++) {
+				map['a' + i] = i + 10;
+				map['A' + i] = i + 10;
+			}
+			return map;
+		}();
+
+		std::vector<unsigned char> FromHex(const std::string_view& str) {
+			std::vector<unsigned char> ret;
+			if (!(str.size()&1)) {
+				ret.reserve(str.size() / 2);
+				for (auto i = 0; i<str.size(); i += 2)
+					ret.push_back(HexMap2[str[i]<<4] | HexMap2[str[i]]);
+			}
+			return ret;
+		}
+		std::vector<unsigned char> FromHex(const std::wstring_view& str) {
+			std::vector<unsigned char> ret;
+			if (!(str.size()&1)) {
+				ret.reserve(str.size() / 2);
+				for (auto i = 0; i<str.size(); i += 2)
+					ret.push_back(HexMap2[str[i]<<4] | HexMap2[str[i]]);
 			}
 			return ret;
 		}

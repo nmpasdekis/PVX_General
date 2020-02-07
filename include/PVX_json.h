@@ -21,11 +21,35 @@ namespace PVX {
 			String,
 			Array,
 			Object,
+			Binary
 		} jsElementType;
+
+		enum class BSON_Type {
+			Double = 0x01,
+			String = 0x02,
+			Object = 0x03,
+			Array = 0x04,
+			Binary = 0x05,
+			Undefined = 0x06,
+			ObjectId = 0x07,
+			Boolean = 0x08,
+			DateTimeUTC = 0x09,
+			Null = 0x0A,
+			Regex = 0x0B,
+			DBPointer = 0x0C,
+			Code = 0x0D,
+			Symbol = 0x0E,
+			Code_w_s = 0x0F,
+			Int32 = 0x10,
+			Timestamp = 0x11,
+			Int64 = 0x12,
+			Decimal128 = 0x13,
+			MinKey = 0xFF,
+			MaxKey = 0x7F
+		};
 
 		class jsArray;
 		class Item;
-
 
 		struct Variant_String {
 			int refCount;
@@ -40,60 +64,88 @@ namespace PVX {
 			std::map<std::wstring, Item> Object;
 		};
 
+		struct Variant_BSON_Binary {
+			int refCount;
+			int Type;
+			std::vector<unsigned char> Bytes;
+		};
+
 		struct Variant {
 			jsElementType GetType() const { return Type; }
 
 			~Variant() { Release(); }
-			Variant() : Type{ jsElementType::Undefined } { Value.Boolean = false; }
-			Variant(const long long v) : Type{ jsElementType::Integer } { Value.Integer = v; }
-			Variant(const double v) : Type{ jsElementType::Float } { Value.Double = v; }
-			Variant(const bool v) : Type{ jsElementType::Boolean } { Value.Boolean = v; }
-			Variant(const nullptr_t v) : Type{ jsElementType::Null } { Value.Integer = 0; }
-			Variant(const std::wstring& v) : Type{ jsElementType::String } { Value.String = new Variant_String{ 1, v }; }
-			Variant(const std::vector<Item>& v) : Type{ jsElementType::Array } { Value.Array = new Variant_Array{ 1, v }; }
-			Variant(const std::map<std::wstring, Item>& v) : Type{ jsElementType::Object } { Value.Object = new Variant_Object{ 1, v }; }
+			Variant() : Type{ jsElementType::Undefined }, BsonType{ BSON_Type::Undefined } { Value.Boolean = false; }
+			Variant(const long long v) : Type{ jsElementType::Integer }, BsonType{ BSON_Type::Int64 } { Value.Integer = v; }
+			Variant(const double v) : Type{ jsElementType::Float }, BsonType{ BSON_Type::Double } { Value.Double = v; }
+			Variant(const bool v) : Type{ jsElementType::Boolean }, BsonType{ BSON_Type::Boolean } { Value.Boolean = v; }
+			Variant(const nullptr_t v) : Type{ jsElementType::Null }, BsonType{ BSON_Type::Null } { Value.Integer = 0; }
+			Variant(const std::wstring& v) : Type{ jsElementType::String }, BsonType{ BSON_Type::String } { Value.String = new Variant_String{ 1, v }; }
+			Variant(const std::vector<Item>& v) : Type{ jsElementType::Array }, BsonType{ BSON_Type::Array } { Value.Array = new Variant_Array{ 1, v }; }
+			Variant(const std::map<std::wstring, Item>& v) : Type{ jsElementType::Object }, BsonType{ BSON_Type::Object } { Value.Object = new Variant_Object{ 1, v }; }
+			Variant(const std::vector<unsigned char>& v):Type{ jsElementType::Binary }, BsonType{ BSON_Type::Binary } { Value.Binary = new Variant_BSON_Binary{ 1, 0, v }; }
 			Variant(const jsElementType tp) : Type{ tp } {
 				switch (tp) {
-					case jsElementType::Undefined: Value.Boolean = false; break;
-					case jsElementType::Null: Value.Boolean = false; break;
-					case jsElementType::Boolean: Value.Boolean = false; break;
-					case jsElementType::Integer: Value.Integer = 0ll; break;
-					case jsElementType::Float: Value.Double = 0.0; break;
-					case jsElementType::String: Value.String = new Variant_String{ 1 }; break;
-					case jsElementType::Array: Value.Array = new Variant_Array{ 1 }; break;
-					case jsElementType::Object: Value.Object = new Variant_Object{ 1 }; break;
+					case jsElementType::Undefined: Value.Boolean = false; BsonType = BSON_Type::Undefined; break;
+					case jsElementType::Null: Value.Boolean = false; BsonType = BSON_Type::Null; break;
+					case jsElementType::Boolean: Value.Boolean = false; BsonType = BSON_Type::Boolean; break;
+					case jsElementType::Integer: Value.Integer = 0ll; BsonType = BSON_Type::Int64; break;
+					case jsElementType::Float: Value.Double = 0.0; BsonType = BSON_Type::Double; break;
+					case jsElementType::String: Value.String = new Variant_String{ 1 }; BsonType = BSON_Type::String; break;
+					case jsElementType::Array: Value.Array = new Variant_Array{ 1 }; BsonType = BSON_Type::Array; break;
+					case jsElementType::Object: Value.Object = new Variant_Object{ 1 }; BsonType = BSON_Type::Object; break;
+					case jsElementType::Binary: Value.Binary = new Variant_BSON_Binary{ 1 }; BsonType = BSON_Type::Binary; break;
+					default: Value.Boolean = false; BsonType = BSON_Type::Undefined; break;
 				}
 			}
-			Variant(const Variant& v) :Value{ v.Value }, Type{ v.Type } {
+			Variant(const Variant& v) :Value{ v.Value }, Type{ v.Type }, BsonType{ v.BsonType } {
 				if (Type>=jsElementType::String) Value.String->refCount++;
 			}
 
 
-			bool& operator=(const bool v) { Release(); Type = jsElementType::Boolean; Value.Integer = v; return Value.Boolean; }
-			long long& operator=(const int v) { Release(); Type = jsElementType::Integer; Value.Integer = v; return Value.Integer; }
-			long long& operator=(const long long v) { Release(); Type = jsElementType::Integer; Value.Integer = v; return Value.Integer; }
-			double& operator=(const float v) { Release(); Type = jsElementType::Float; Value.Double = v; return Value.Double; }
-			double& operator=(const double v) { Release(); Type = jsElementType::Float; Value.Double = v; return Value.Double; }
+			bool& operator=(const bool v) { Release(); Type = jsElementType::Boolean; Value.Boolean = v; BsonType = BSON_Type::Boolean; return Value.Boolean; }
+			long long& operator=(const int v) { Release(); Type = jsElementType::Integer; Value.Integer = v; BsonType = BSON_Type::Int64; return Value.Integer; }
+			long long& operator=(const long long v) { Release(); Type = jsElementType::Integer; Value.Integer = v; BsonType = BSON_Type::Int64; return Value.Integer; }
+			double& operator=(const float v) { Release(); Type = jsElementType::Float; Value.Double = v; BsonType = BSON_Type::Double; return Value.Double; }
+			double& operator=(const double v) { Release(); Type = jsElementType::Float; Value.Double = v; BsonType = BSON_Type::Double; return Value.Double; }
 
+			nullptr_t operator=(const nullptr_t& t) {
+				Release();
+				Value.Integer = 0;
+				Type = jsElementType::Null;
+				BsonType = BSON_Type::Null;
+				return nullptr;
+			}
 			std::wstring& operator=(const wchar_t* v) {
 				Release();
 				Type = jsElementType::String;
+				BsonType = BSON_Type::String;
 				Value.String = new Variant_String{ 1, v };
 				return Value.String->String;
 			}
 			std::wstring& operator=(const std::wstring& v) {
 				Release();
 				Type = jsElementType::String;
+				BsonType = BSON_Type::String;
 				Value.String = new Variant_String{ 1, v };
 				return Value.String->String;
 			}
-			std::vector<Item>& operator=(const std::vector<Item>& v) { Release(); Type = jsElementType::Array; Value.Array = new Variant_Array{ 1, v }; return Value.Array->Array; }
-			std::map<std::wstring, Item>& operator=(const std::map<std::wstring, Item>& v) { Release(); Type = jsElementType::Object; Value.Object = new Variant_Object{ 1, v }; return Value.Object->Object; }
+			std::vector<unsigned char>& operator=(const std::vector<unsigned char>& v) {
+				Release();
+				Type = jsElementType::Binary;
+				BsonType = BSON_Type::Binary;
+				Value.Binary = new Variant_BSON_Binary{ 1, 0, v };
+				return Value.Binary->Bytes;
+			}
+
+			std::vector<Item>& operator=(const std::vector<Item>& v) { Release(); Type = jsElementType::Array; BsonType = BSON_Type::Array; Value.Array = new Variant_Array{ 1, v }; return Value.Array->Array; }
+			std::map<std::wstring, Item>& operator=(const std::map<std::wstring, Item>& v) { Release(); Type = jsElementType::Object; BsonType = BSON_Type::Object; Value.Object = new Variant_Object{ 1, v }; return Value.Object->Object; }
+
 
 			Variant& operator=(const Variant& v) {
 				if (v.Type>=jsElementType::String) v.Value.String->refCount++;
 				Release();
 				Type = v.Type;
+				BsonType = v.BsonType;
 				Value = v.Value;
 				return *this;
 			}
@@ -115,12 +167,17 @@ namespace PVX {
 			std::wstring& String() { return Value.String->String; }
 			std::vector<Item>& Array() { return Value.Array->Array; }
 			std::map<std::wstring, Item>& Object() { return Value.Object->Object; }
+			std::vector<unsigned char>& Binary() { return Value.Binary->Bytes; }
 
 			const std::wstring& String() const { return Value.String->String; }
 			const std::vector<Item>& Array() const { return Value.Array->Array; }
 			const std::map<std::wstring, Item>& Object() const { return Value.Object->Object; }
+			const std::vector<unsigned char>& Binary() const { return Value.Binary->Bytes; }
+
+			BSON_Type& Bosn() { return BsonType; }
 		private:
 			jsElementType Type;
+			BSON_Type BsonType;
 			union {
 				bool Boolean;
 				long long Integer;
@@ -128,6 +185,7 @@ namespace PVX {
 				Variant_String* String;
 				Variant_Array* Array;
 				Variant_Object* Object;
+				Variant_BSON_Binary* Binary;
 			} Value;
 			void Release() {
 				switch (Type) {
@@ -140,8 +198,12 @@ namespace PVX {
 					case PVX::JSON::jsElementType::Object: if (!--Value.Object->refCount)
 						delete Value.Object;
 						break;
+					case PVX::JSON::jsElementType::Binary: if (!--Value.Object->refCount)
+						delete Value.Binary;
+						break;
 				}
 				Type = jsElementType::Undefined;
+				BsonType = BSON_Type::Undefined;
 			}
 		};
 
@@ -207,6 +269,7 @@ namespace PVX {
 			}
 
 			Item& operator=(const enum jsElementType);
+			Item& operator=(const nullptr_t&);
 			Item& operator=(const int);
 			Item& operator=(const long long);
 			Item& operator=(const float);
@@ -281,9 +344,6 @@ namespace PVX {
 			Item Copy();
 			Item DeepCopy();
 			Item DeepReducedCopy();
-			//Item& Cache();
-			//Item& Cache(const std::string& str);
-			//Item& Cache(const std::wstring& str);
 
 			Item& Merge(const Item& With);
 			int SaveBinary(const wchar_t* Filename);
@@ -309,7 +369,6 @@ namespace PVX {
 		private:
 			void WriteBin(void*);
 			static Item ReadBin(void*);
-			//Item* cache = nullptr;
 		};
 
 		class jsArray {
@@ -324,8 +383,8 @@ namespace PVX {
 		Item parse(const unsigned char*, int size);
 		Item parse(const std::vector<unsigned char>&);
 		Item parse(const std::wstring& Json);
-		//Item parse2(const std::wstring& Json);
-		//Item parse3(const std::wstring& Json);
+		Item fromBSON(const std::vector<unsigned char>& Data);
+		Item fromBSON(const std::wstring& Data);
 	}
 }
 #endif

@@ -32,6 +32,10 @@ namespace PVX{
 		std::string UriEncode(const std::vector<unsigned char> & s);
 		std::string Uri(const std::wstring & s);
 		std::string Windows1253_Greek(const std::wstring & data);
+		std::string ToHex(const std::vector<unsigned char>& Data);
+		std::string ToHexUpper(const std::vector<unsigned char>& Data);
+		std::wstring wToHex(const std::vector<unsigned char>& Data);
+		std::wstring wToHexUpper(const std::vector<unsigned char>& Data);
 	}
 	namespace Decode{
 		std::vector<unsigned char> Base64(const std::string & base64);
@@ -51,6 +55,9 @@ namespace PVX{
 		std::wstring Uri(const std::string & s);
 		std::wstring Uri(const std::wstring & s);
 		std::wstring Unescape(const std::wstring& x);
+
+		std::vector<unsigned char> FromHex(const std::string_view& str);
+		std::vector<unsigned char> FromHex(const std::wstring_view& str);
 	}
 }
 
