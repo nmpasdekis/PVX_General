@@ -50,6 +50,9 @@
     <None Include="include\PVX.inl">
       <Filter>Header Files</Filter>
     </None>
+    <None Include="include\MemoryLeak.inl">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\PVX_Deflate.h">

@@ -6,6 +6,7 @@
 #include <PVX_Encode.h>
 #include <PVX_File.h>
 #include <string_view>
+#include <PVX_Regex.h>
 
 static std::wstring JsonString(const std::wstring& s) {
 	std::wstringstream ret;
@@ -39,7 +40,8 @@ enum class Symbols : wchar_t {
 	CloseSquare,
 	CloseCurly,
 	Comma,
-	Colon
+	Colon,
+	Function,
 };
 
 namespace PVX {
@@ -184,10 +186,18 @@ namespace PVX {
 				case jsElementType::Float: Value = 0.0; break;
 				case jsElementType::String: Value = L""; break;
 				case jsElementType::Array: Value = std::vector<Item>(); break;
-				case jsElementType::Object: Value = std::map<std::wstring, Item>(); break;
+				case jsElementType::Object: Value = std::unordered_map<std::wstring, Item>(); break;
 				case jsElementType::Boolean: Value = false; break;
 			}
 			return *this;
+		}
+		const Item& Item::operator||(const Item& item) const {
+			if (!IsEmpty()) return *this;
+			return item;
+		}
+		const Item& Item::operator&&(const Item& item) const {
+			if (IsEmpty()) return false;
+			return item;
 		}
 		Item& Item::operator=(const nullptr_t& n) {
 			Value = nullptr;
@@ -373,7 +383,7 @@ namespace PVX {
 			Value = PVX::Encode::ToString(PVX::Encode::Base64(d));
 		}
 
-		Item Item::map(std::function<Item(const Item&)> Convert) {
+		Item Item::unordered_map(std::function<Item(const Item&)> Convert) {
 			if (Value.GetType() == JSON::jsElementType::Array) {
 				Item ret = JSON::jsElementType::Array;
 				for (auto& i : Value.Array()) {
@@ -384,7 +394,7 @@ namespace PVX {
 			return jsElementType::Undefined;
 		}
 
-		Item Item::map2(std::function<Item(const Item&, int Index)> Convert) {
+		Item Item::unordered_map2(std::function<Item(const Item&, int Index)> Convert) {
 			if (Value.GetType() == JSON::jsElementType::Array) {
 				Item ret = JSON::jsElementType::Array;
 				int Index = 0;
@@ -477,7 +487,7 @@ namespace PVX {
 				case PVX::JSON::jsElementType::Boolean:
 					return (*this);
 				case PVX::JSON::jsElementType::Array:
-					return map([](auto x) { return x.DeepCopy(); });
+					return unordered_map([](auto x) { return x.DeepCopy(); });
 					break;
 				case PVX::JSON::jsElementType::Object: {
 					Item ret = Value.GetType();
@@ -565,6 +575,12 @@ namespace PVX {
 					return obj.Boolean() ? L"true" : L"false";
 				case jsElementType::String:
 					return JsonString(obj.String());
+				case jsElementType::Binary:
+					switch (obj.Value.Bson()) {
+						case BSON_Type::ObjectId:
+							return L"ObjectId(\"" + PVX::Encode::wToHex(obj.Value.Binary()) + L"\")";
+					}
+					return L"undefined";
 				case jsElementType::Array:
 					ret << "[";
 					{
@@ -572,10 +588,10 @@ namespace PVX {
 						if (Array.size()) {
 							size_t i = 0;
 							while (i< Array.size() && Array[i].Type()==jsElementType::Undefined)i++;
-							ret << Lvl1 << stringify(Array[i], level + 1); i++;
+							ret << Lvl1 << stringify(Array[i], level + 1, Format); i++;
 							while (i< Array.size() && Array[i].Type()==jsElementType::Undefined)i++;
 							for (; i < Array.size(); i++) {
-								ret << "," << Lvl1 << stringify(Array[i], level + 1);
+								ret << "," << Lvl1 << stringify(Array[i], level + 1, Format);
 								while (i< Array.size() && Array[i].Type()==jsElementType::Undefined)i++;
 							}
 						}
@@ -670,8 +686,8 @@ namespace PVX {
 			return ret;
 		}
 
-		static std::wstring RemoveStrings(const std::wstring& text, std::vector<std::wstring>& Strings) {
-			std::wstring Text = text;
+		static std::wstring RemoveStrings(const std::wstring_view& text, std::vector<std::wstring>& Strings) {
+			std::wstring Text = text.data();
 			long long index = Text.find('"');
 			while (index != -1) {
 				long long end = Text.find('"', index + 1);
@@ -753,7 +769,14 @@ namespace PVX {
 			txt.resize(j);
 		}
 
-		Item parse(const std::wstring& Json) {
+		void RemoveFunctions(std::wstring& Text, std::vector<std::wstring>& Functions) {
+			Text = PVX::Replace(Text, LR"regex(([$a-zA-Z_][$a-zA-Z_0-9]*)\(([^\)]*)\))regex", [&Functions](const std::wsmatch& m) {
+				Functions.emplace_back(m[1].str());
+				return L"@";
+			});
+		}
+
+		Item parse(const std::wstring_view& Json) {
 			std::vector<std::wstring> Strings;
 			std::vector<long long> Integers;
 			std::vector<double> Doubles;
@@ -769,7 +792,7 @@ namespace PVX {
 			std::vector<char> Stack;
 			Stack.reserve(tmp.size());
 			int ItemCount = 0;
-			int ints = 0, floats = 0, strings = 0;
+			int ints = 0, floats = 0, strings = 0, functions = 0;
 
 			for (auto& t : tmp) {
 				switch (t) {
@@ -779,6 +802,7 @@ namespace PVX {
 					case '}': t = (wchar_t)Symbols::CloseCurly; continue;
 					case ',': t = (wchar_t)Symbols::Comma; continue;
 					case ':': t = (wchar_t)Symbols::Colon; continue;
+					case '@': t = (wchar_t)Symbols::Function; continue;
 				}
 			}
 
@@ -791,6 +815,7 @@ namespace PVX {
 					case (wchar_t)Symbols::True: Output.emplace_back(0, 0, true); ItemCount++; break;
 					case (wchar_t)Symbols::False: Output.emplace_back(0, 0, false); ItemCount++; break;
 					case (wchar_t)Symbols::Null: Output.emplace_back(0, 0, jsElementType::Null); ItemCount++;  break;
+
 					case (wchar_t)Symbols::OpenCurly: Stack.push_back((wchar_t)Symbols::OpenCurly); ItemCount = 0; break;
 					case (wchar_t)Symbols::OpenSquare: Stack.push_back((wchar_t)Symbols::OpenSquare); ItemCount = 0; break;
 					case (wchar_t)Symbols::CloseSquare: {
@@ -878,6 +903,151 @@ namespace PVX {
 			return jsElementType::Undefined;
 		}
 
+		Item parsePlus(const std::wstring_view& Json) {
+			std::vector<std::wstring> Functions;
+			std::vector<std::wstring> Strings;
+			std::vector<long long> Integers;
+			std::vector<double> Doubles;
+			std::unordered_map<std::wstring, std::function<JSON::Item(const std::wstring&)>> Function{
+				{ L"ObjectId", [](const std::wstring& str) { return ObjectId(str); } }
+			};
+
+			auto tmp = RemoveStrings(Json, Strings);
+			RemoveFunctions(tmp, Functions);
+			removeSpaces(tmp);
+			removeBoolsAndNulls(tmp);
+			removeNumbers(tmp, Doubles, Integers);
+
+			std::vector<jsonStack> Output, Stack2;
+			Output.reserve(tmp.size());
+			Stack2.reserve(tmp.size());
+			std::vector<char> Stack;
+			Stack.reserve(tmp.size());
+			int ItemCount = 0;
+			int ints = 0, floats = 0, strings = 0, functions = 0;
+
+			for (auto& t : tmp) {
+				switch (t) {
+					case '{': t = (wchar_t)Symbols::OpenCurly; continue;
+					case '[': t = (wchar_t)Symbols::OpenSquare; continue;
+					case ']': t = (wchar_t)Symbols::CloseSquare; continue;
+					case '}': t = (wchar_t)Symbols::CloseCurly; continue;
+					case ',': t = (wchar_t)Symbols::Comma; continue;
+					case ':': t = (wchar_t)Symbols::Colon; continue;
+					case '@': t = (wchar_t)Symbols::Function; continue;
+				}
+			}
+
+			for (auto c : tmp) {
+				char Empty = 0;
+				switch (c) {
+					case (wchar_t)Symbols::Quote: Output.emplace_back(0, 0, std::move(Strings[strings++])); ItemCount++; break;
+					case (wchar_t)Symbols::Integer: Output.emplace_back(0, 0, std::move(Integers[ints++])); ItemCount++; break;
+					case (wchar_t)Symbols::Float: Output.emplace_back(0, 0, std::move(Doubles[floats++])); ItemCount++; break;
+					case (wchar_t)Symbols::True: Output.emplace_back(0, 0, true); ItemCount++; break;
+					case (wchar_t)Symbols::False: Output.emplace_back(0, 0, false); ItemCount++; break;
+					case (wchar_t)Symbols::Null: Output.emplace_back(0, 0, jsElementType::Null); ItemCount++;  break;
+
+					case (wchar_t)Symbols::Function: {
+						auto& arg = Strings[strings++];
+						if (auto fnc = Function.find(Functions[functions++]); fnc !=Function.end())
+							Output.emplace_back(0, 0, fnc->second(arg));
+						else
+							Output.emplace_back(0, 0, jsElementType::Undefined);
+						ItemCount++;  
+						break;
+					}
+
+					case (wchar_t)Symbols::OpenCurly: Stack.push_back((wchar_t)Symbols::OpenCurly); ItemCount = 0; break;
+					case (wchar_t)Symbols::OpenSquare: Stack.push_back((wchar_t)Symbols::OpenSquare); ItemCount = 0; break;
+					case (wchar_t)Symbols::CloseSquare: {
+						if (Stack.size() && Stack.back() == (wchar_t)Symbols::OpenSquare && !ItemCount) Empty = 1;
+						while (Stack.size() && Stack.back() != (wchar_t)Symbols::OpenSquare) {
+							Output.emplace_back(Stack.back(), 0);
+							Stack.pop_back();
+						}
+						if (!Stack.size()||Stack.back()!=(wchar_t)Symbols::OpenSquare)
+							return jsElementType::Undefined;
+						Stack.pop_back();
+						Output.emplace_back((char)Symbols::OpenSquare, Empty, jsElementType::Array);
+						ItemCount++;
+						break;
+					}
+					case (wchar_t)Symbols::CloseCurly: {
+						if (Stack.size() && Stack.back() == (wchar_t)Symbols::OpenCurly && !ItemCount) Empty = 1;
+						while (Stack.size() && Stack.back() != (wchar_t)Symbols::OpenCurly) {
+							Output.emplace_back(Stack.back());
+							Stack.pop_back();
+						}
+						if (!Stack.size() || Stack.back() != (wchar_t)Symbols::OpenCurly)
+							return jsElementType::Undefined;
+						Stack.pop_back();
+						Output.emplace_back((wchar_t)Symbols::OpenCurly, Empty, jsElementType::Object);
+						ItemCount++;
+						break;
+					}
+					case (wchar_t)Symbols::Comma:
+						while (Stack.size() && Stack.back() > (wchar_t)Symbols::Comma) {
+							Output.emplace_back(Stack.back());
+							Stack.pop_back();
+						}
+						Stack.push_back(c);
+						break;
+					case (wchar_t)Symbols::Colon:
+						Stack.push_back(c);
+						break;
+				}
+			}
+			while (Stack.size()) {
+				Output.push_back({ Stack.back() });
+				Stack.pop_back();
+			}
+
+			for (auto& s : Output) {
+				switch (s.op) {
+					case 0:	Stack2.emplace_back(std::move(s)); break;
+					case (wchar_t)Symbols::Colon:
+					case (wchar_t)Symbols::Comma: {
+						if (Stack2.size() >= 2) {
+							s.Child.emplace_back(std::move(Stack2.back()));
+							Stack2.pop_back();
+							s.Child.emplace_back(std::move(Stack2.back()));
+							Stack2.back() = s;
+							break;
+						}
+						return jsElementType::Undefined;
+					}
+					case (wchar_t)Symbols::OpenCurly: {
+						if (s.Empty) {
+							Stack2.emplace_back(std::move(s));
+							break;
+						} else if (Stack2.size()) {
+							MakeObject(s.val, std::move(Stack2.back()));
+							Stack2.back() = std::move(s);
+							break;
+						}
+						return jsElementType::Undefined;
+					}
+					case (wchar_t)Symbols::OpenSquare: {
+						if (s.Empty) {
+							Stack2.emplace_back(std::move(s));
+							break;
+						} else if (Stack2.size()) {
+							MakeArray(s.val, std::move(Stack2.back()));
+							Stack2.back() = std::move(s);
+							break;
+						}
+						return jsElementType::Undefined;
+					}
+				}
+			}
+			if (Stack2.size() == 1) return Stack2[0].val;
+			return jsElementType::Undefined;
+		}
+
+
+
+
 		namespace BSON {
 			double Double(const unsigned char*& cur) {
 				cur += 8;
@@ -908,6 +1078,12 @@ namespace PVX {
 				cur += len + 1;
 				return (const char*)(cur - len - 1);
 			}
+			const std::vector<unsigned char> ObjectId(const unsigned char*& cur) {
+				std::vector<unsigned char> ret(12);
+				memcpy(&ret[0], cur, 12);
+				cur += 12;
+				return ret;
+			}
 
 			std::wstring ReadString(const unsigned char*& cur) {
 				auto sz = Int(cur);
@@ -921,19 +1097,22 @@ namespace PVX {
 				Item ret = jsElementType::Object;
 				while (cur < End) {
 					auto tp = Byte(cur);
-					auto name = String(cur);
-					switch (tp) {
-						case 0x00: return ret;
-						case 0x01: ret[name] = Double(cur); break;
-						case 0x02: ret[name] = ReadString(cur); break;
-						case 0x03: ret[name] = ReadObject(cur); break;
-						case 0x04: ret[name] = ReadArray(cur); break;
-						case 0x08: ret[name] = (bool)Byte(cur); break;
-						case 0x0A: ret[name] = nullptr; break;
-						case 0x10: ret[name] = Int(cur); break;
-						case 0x12: ret[name] = Int64(cur); break;
-						default: cur = End; return ret;
-					};
+					if (tp) {
+						auto name = String(cur);
+						switch (tp) {
+							case 0x01: ret[name] = Double(cur); break;
+							case 0x02: ret[name] = ReadString(cur); break;
+							case 0x03: ret[name] = ReadObject(cur); break;
+							case 0x04: ret[name] = ReadArray(cur); break;
+							case 0x07: ret[name].Value = ObjectId(cur); break;
+							case 0x08: ret[name] = (bool)Byte(cur); break;
+							case 0x0A: ret[name] = nullptr; break;
+							case 0x10: ret[name] = Int(cur); break;
+							case 0x12: ret[name] = Int64(cur); break;
+							default: cur = End; return ret;
+						};
+						ret[name].Value.Bson() = (BSON_Type)tp;
+					}
 				}
 				return ret;
 			}
@@ -944,22 +1123,25 @@ namespace PVX {
 				Item item = jsElementType::Array;
 				while (cur < End) {
 					auto tp = Byte(cur);
-					auto index = atoi(String2(cur));
-					if (ret.length()!=index) ret.getArray().resize(index);
-					switch (tp) {
-						case 0x00: return ret;
-						case 0x01: item = Double(cur); break;
-						case 0x02: item = ReadString(cur); break;
-						case 0x03: item = ReadObject(cur); break;
-						case 0x04: item = ReadArray(cur); break;
-						case 0x08: item = (bool)Byte(cur); break;
-						case 0x0A: item = nullptr; break;
-						case 0x10: item = Int(cur); break;
-						case 0x12: item = Int64(cur); break;
-						default: cur = End; return ret;
-					};
-					item.Value.Bosn() = (BSON_Type)tp;
-					ret.push(item);
+					if (tp) {
+						auto index = atoi(String2(cur));
+						if (ret.length()!=index) ret.getArray().resize(index);
+						switch (tp) {
+							case 0x00: return ret;
+							case 0x01: item = Double(cur); break;
+							case 0x02: item = ReadString(cur); break;
+							case 0x03: item = ReadObject(cur); break;
+							case 0x04: item = ReadArray(cur); break;
+							case 0x07: item = ObjectId(cur); break;
+							case 0x08: item = (bool)Byte(cur); break;
+							case 0x0A: item = nullptr; break;
+							case 0x10: item = Int(cur); break;
+							case 0x12: item = Int64(cur); break;
+							default: cur = End; return ret;
+						};
+						item.Value.Bson() = (BSON_Type)tp;
+						ret.push(item);
+					}
 				}
 				return ret;
 			}
@@ -968,8 +1150,207 @@ namespace PVX {
 			const unsigned char* cur = &Data[0];
 			return BSON::ReadObject(cur);
 		}
+		JSON::Item fromBSON(const std::vector<unsigned char>& Data, size_t& Cursor) {
+			const unsigned char* cur = &Data[Cursor];
+			auto ret = BSON::ReadObject(cur);
+			Cursor = cur - &Data[0];
+			return ret;
+		}
 		Item fromBSON(const std::wstring& Data) {
 			return fromBSON(PVX::IO::ReadBinary(Data.c_str()));
+		}
+
+		std::vector<unsigned char> ToBSON(const Item& obj) {
+			std::vector<unsigned char> ret;
+			ToBSON(obj, ret);
+			return ret;
+		}
+
+		auto AppendBytes(std::vector<unsigned char>& Data, int Count) {
+			auto cur = Data.size();
+			Data.resize(cur + Count);
+			return cur;
+		}
+		int AppendString(std::vector<unsigned char>& Data, const std::wstring& str) {
+			auto len = (int)PVX::Encode::UTF_Length(str) + 1;
+			PVX::Encode::UTF(&Data[AppendBytes(Data, len)], str.c_str());
+			return len;
+		}
+		int AppendString(std::vector<unsigned char>& Data, const std::string& str) {
+			auto cur = AppendBytes(Data, str.size() + 1);
+			memcpy(&Data[cur], str.data(), str.size());
+			return str.size();
+		}
+		int AppendData(std::vector<unsigned char>& Data, const std::vector<unsigned char>& str) {
+			auto cur = AppendBytes(Data, str.size());
+			memcpy(&Data[cur], str.data(), str.size());
+			return str.size();
+		}
+		template<typename T>
+		void Append(std::vector<unsigned char>& Data, T Prim) {
+			auto cur = Data.size();
+			Data.resize(cur + sizeof(T));
+			(*(T*)&Data[cur]) = Prim;
+		}
+
+		void AppendStringObject(std::vector<unsigned char>& Data, const std::wstring& str) {
+			auto SizeIndex = AppendBytes(Data, 4);
+			AppendString(Data, str);
+			(*(int*)&Data[SizeIndex]) = Data.size() - SizeIndex - 4;
+		}
+
+		void AppendObject(std::vector<unsigned char>& Data, const Item& obj) {
+			auto SizeIndex = AppendBytes(Data, 4);
+			auto& o = obj.getObject();
+			for (auto& [n, v]: o) {
+				if (v.Value.Bson() != JSON::BSON_Type::Undefined) {
+					Append(Data, (unsigned char)v.Value.Bson());
+					AppendString(Data, n);
+					ToBSON(v, Data);
+				}
+			}
+			Append(Data, (char)0);
+			(*(int*)&Data[SizeIndex]) = Data.size() - SizeIndex;
+		}
+		void AppendArray(std::vector<unsigned char>& Data, const Item& obj) {
+			auto SizeIndex = AppendBytes(Data, 4);
+			auto& o = obj.getArray();
+			size_t index = 0;
+			for (auto& v: o) {
+				if (v.Value.Bson() != JSON::BSON_Type::Undefined) {
+					Append(Data, (unsigned char)v.Value.Bson());
+					AppendString(Data, std::to_string(index));
+					ToBSON(v, Data);
+				}
+				index++;
+			}
+			Append(Data, (char)0);
+			(*(int*)&Data[SizeIndex]) = Data.size() - SizeIndex;
+		}
+
+		void ToBSON(const Item& obj, std::vector<unsigned char>& Data) {
+			switch (obj.Value.Bson()) {
+				case PVX::JSON::BSON_Type::Double:
+					Append(Data, obj.Double());
+					break;
+				case PVX::JSON::BSON_Type::String:
+					AppendStringObject(Data, obj.String());
+					break;
+				case PVX::JSON::BSON_Type::Object: 
+					AppendObject(Data, obj);
+					break;
+				case PVX::JSON::BSON_Type::Array:
+					AppendArray(Data, obj);
+					break;
+				case PVX::JSON::BSON_Type::Binary:
+					break;
+				//case PVX::JSON::BSON_Type::Undefined:
+				//	break;
+				case PVX::JSON::BSON_Type::ObjectId:
+					AppendData(Data, obj.Value.Binary());
+					break;
+				case PVX::JSON::BSON_Type::Boolean:
+					Append(Data, (char)(obj.Boolean() ? 1 : 0));
+					break;
+				case PVX::JSON::BSON_Type::DateTimeUTC:
+					Append(Data, obj.Integer());
+					break;
+				//case PVX::JSON::BSON_Type::Null:
+				//	break;
+				case PVX::JSON::BSON_Type::Regex:
+					break;
+				case PVX::JSON::BSON_Type::DBPointer:
+					break;
+				case PVX::JSON::BSON_Type::Code:
+					AppendStringObject(Data, obj.String());
+					break;
+				case PVX::JSON::BSON_Type::Symbol:
+					AppendStringObject(Data, obj.String());
+					break;
+				case PVX::JSON::BSON_Type::Code_w_s:
+					break;
+				case PVX::JSON::BSON_Type::Int32:
+					Append(Data, (int)obj.Integer());
+					break;
+				case PVX::JSON::BSON_Type::Timestamp:
+					Append(Data, obj.Integer());
+					break;
+				case PVX::JSON::BSON_Type::Int64:
+					Append(Data, obj.Integer());
+					break;
+				case PVX::JSON::BSON_Type::Decimal128:
+					break;
+				case PVX::JSON::BSON_Type::MinKey:
+					break;
+				case PVX::JSON::BSON_Type::MaxKey:
+					break;
+				default:
+					break;
+			}
+		}
+		JSON::Item ObjectId(const std::string_view& hexId) {
+			JSON::Item ret = PVX::Decode::FromHex(hexId);
+			ret.Value.Bson() = BSON_Type::ObjectId;
+			return ret;
+		}
+		JSON::Item ObjectId(const std::wstring_view& hexId) {
+			JSON::Item ret = PVX::Decode::FromHex(hexId);
+			ret.Value.Bson() = BSON_Type::ObjectId;
+			return ret;
+		}
+	}
+	namespace BSON {
+		Item::Item(const std::initializer_list<std::pair<std::wstring, BsonVariant>>& list) {
+			Type = (char)JSON::BSON_Type::Object;
+			AppendBytes(4);
+			for (const auto& [n, v] : list) {
+				switch (v.Index()) {
+					case 0: write((char)JSON::BSON_Type::String);  write2(n); write(v.get<0>()); break;
+					case 1: write((char)JSON::BSON_Type::String);  write2(n); write(v.get<1>()); break;
+					case 2: write((char)JSON::BSON_Type::Boolean); write2(n); write(v.get<2>()); break;
+					case 3: write((char)JSON::BSON_Type::Int32);   write2(n); write(v.get<3>()); break;
+					case 4: write((char)JSON::BSON_Type::Int64);   write2(n); write(v.get<4>()); break;
+					case 5: write((char)JSON::BSON_Type::Double);  write2(n); write(v.get<5>()); break;
+					default: write(v.get<6>().Type);  write2(n); write(v.get<6>()); break;
+				}
+			}
+			write(char(0));
+			*(int32_t*)&Data[0] = Data.size();
+		}
+		Item::Item(const std::initializer_list<std::pair<std::string, BsonVariant>>& list) {
+			Type = (char)JSON::BSON_Type::Object;
+			AppendBytes(4);
+			for (const auto& [n, v] : list) {
+				switch (v.Index()) {
+					case 0: write((char)JSON::BSON_Type::String);  write2(n); write(v.get<0>()); break;
+					case 1: write((char)JSON::BSON_Type::String);  write2(n); write(v.get<1>()); break;
+					case 2: write((char)JSON::BSON_Type::Boolean); write2(n); write(v.get<2>()); break;
+					case 3: write((char)JSON::BSON_Type::Int32);   write2(n); write(v.get<3>()); break;
+					case 4: write((char)JSON::BSON_Type::Int64);   write2(n); write(v.get<4>()); break;
+					case 5: write((char)JSON::BSON_Type::Double);  write2(n); write(v.get<5>()); break;
+					default: write(v.get<6>().Type);  write2(n); write(v.get<6>()); break;
+				}
+			}
+			write(char(0));
+			*(int32_t*)&Data[0] = Data.size();
+		}
+		Item::Item(const std::initializer_list<BsonVariant>& list) {
+			Type = (char)JSON::BSON_Type::Array;
+			AppendBytes(4);
+			int i = 0;
+			for (const auto& v : list) {
+				switch (v.Index()) {
+					case 0: write((char)JSON::BSON_Type::String);  write2(std::to_string(i++)); write(v.get<0>()); break;
+					case 1: write((char)JSON::BSON_Type::String);  write2(std::to_string(i++)); write(v.get<1>()); break;
+					case 2: write((char)JSON::BSON_Type::Boolean); write2(std::to_string(i++)); write(v.get<2>()); break;
+					case 3: write((char)JSON::BSON_Type::Int32);   write2(std::to_string(i++)); write(v.get<3>()); break;
+					case 4: write((char)JSON::BSON_Type::Int64);   write2(std::to_string(i++)); write(v.get<4>()); break;
+					case 5: write((char)JSON::BSON_Type::Double);  write2(std::to_string(i++)); write(v.get<5>()); break;
+					default: write(v.get<6>().Type);  write2(std::to_string(i++)); write(v.get<6>()); break;
+				}
+			}
+			write(char(0));
+			*(int32_t*)&Data[0] = Data.size();
 		}
 	}
 }

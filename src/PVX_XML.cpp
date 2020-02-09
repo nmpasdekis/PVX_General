@@ -218,8 +218,15 @@ namespace PVX::XML {
 			case Element::ElementType::OpenTag:
 			case Element::ElementType::HtmlSingle: {
 				ret[L"Name"] = xml.Text;
-				if (xml.Attributes.size())
-					ret[L"Attributes"] = xml.Attributes;
+				if (xml.Attributes.size()) {
+					ret[L"Attributes"] = [&xml] {
+						std::unordered_map<std::wstring, std::wstring> ret;
+						for(auto& [n, v] : xml.Attributes) {
+							ret[n] = v;
+						}
+						return ret;
+					}();
+				}
 				if (xml.Child.size()) {
 					auto& Children = ret["Children"];
 					Children = PVX::JSON::jsElementType::Array;

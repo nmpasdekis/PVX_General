@@ -91,6 +91,7 @@
     <ClCompile Include="src\PVX_XML.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="include\MemoryLeak.inl" />
     <None Include="include\PVX.inl" />
   </ItemGroup>
   <ItemGroup>

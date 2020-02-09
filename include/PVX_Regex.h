@@ -110,12 +110,48 @@ namespace PVX {
 		return ret;
 	}
 
+	template<typename T_wsmatch>
+	auto regex_matches(const std::wstring& Text, const std::wstring& regExp, T_wsmatch f) {
+		std::vector<decltype(f(std::wsmatch()))> ret;
+		std::wregex reg(regExp, std::regex_constants::optimize);
+		for (auto it = std::wsregex_iterator(Text.cbegin(), Text.cend(), reg); it != std::wsregex_iterator(); it++)
+			ret.push_back(f(*it));
+		return ret;
+	}
+
 	inline std::string Replace(const std::string & Input, const std::string & regExp, const std::string && replaceWith) {
 		return std::regex_replace(Input, std::regex(regExp, std::regex_constants::optimize), replaceWith);
 	}
 
 	inline std::wstring Replace(const std::wstring & Input, const std::wstring & regExp, const std::wstring && replaceWith) {
 		return std::regex_replace(Input, std::wregex(regExp, std::regex_constants::optimize), replaceWith);
+	}
+
+
+
+	inline std::string Replace(const std::string& Input, const std::string& regExp, std::function<std::string(const std::smatch&)> replaceWith) {
+		auto matches = regex_matches<std::pair<std::smatch, std::string>>(Input, std::regex(regExp, std::regex_constants::optimize), [&replaceWith, &Input](const std::smatch& m) {
+			return std::make_pair(m, replaceWith(m));
+		});
+
+		std::string ret = Input;
+		for (long long i = matches.size()-1; i>=0; i--) {
+			auto& m = matches[i];
+			ret = ret.replace(m.first.position(), m.first.size(), m.second);
+		}
+		return ret;
+	}
+	inline std::wstring Replace(const std::wstring& Input, const std::wstring& regExp, std::function<std::wstring(const std::wsmatch&)> replaceWith) {
+		auto matches = regex_matches<std::pair<std::wsmatch, std::wstring>>(Input, std::wregex(regExp, std::regex_constants::optimize), [&replaceWith](const std::wsmatch& m) {
+			return std::make_pair(m, replaceWith(m));
+		});
+
+		std::wstring ret = Input;
+		for (long long i = matches.size()-1; i>=0; i--) {
+			auto& m = matches[i];
+			ret = ret.replace(m.first.position(), m.first.str().size(), m.second);
+		}
+		return ret;
 	}
 }
 

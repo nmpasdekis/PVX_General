@@ -339,14 +339,15 @@ namespace PVX {
 			return ret;
 		}
 
-		constexpr char Hex_Map[]{ '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f' };
+		constexpr char Hex_unordered_map[]{ '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f' };
+		constexpr char Hex_unordered_mapUpper[]{ '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f' };
 
 		std::string ToHex(const std::vector<unsigned char>& Data) {
 			std::string ret;
 			ret.reserve(Data.size()*2);
 			for (auto& byte: Data) {
-				ret.push_back(Hex_Map[byte>>4]);
-				ret.push_back(Hex_Map[byte&0x0f]);
+				ret.push_back(Hex_unordered_map[byte>>4]);
+				ret.push_back(Hex_unordered_map[byte&0x0f]);
 			}
 			return ret;
 		}
@@ -354,8 +355,8 @@ namespace PVX {
 			std::string ret;
 			ret.reserve(Data.size()*2);
 			for (auto& byte: Data) {
-				ret.push_back(Hex_Map[byte>>4]);
-				ret.push_back(Hex_Map[byte&0x0f]);
+				ret.push_back(Hex_unordered_mapUpper[byte>>4]);
+				ret.push_back(Hex_unordered_mapUpper[byte&0x0f]);
 			}
 			return ret;
 		}
@@ -364,8 +365,8 @@ namespace PVX {
 			std::wstring ret;
 			ret.reserve(Data.size()*2);
 			for (auto& byte: Data) {
-				ret.push_back(Hex_Map[byte>>4]);
-				ret.push_back(Hex_Map[byte&0x0f]);
+				ret.push_back(Hex_unordered_map[byte>>4]);
+				ret.push_back(Hex_unordered_map[byte&0x0f]);
 			}
 			return ret;
 		}
@@ -373,14 +374,14 @@ namespace PVX {
 			std::wstring ret;
 			ret.reserve(Data.size()*2);
 			for (auto& byte: Data) {
-				ret.push_back(Hex_Map[byte>>4]);
-				ret.push_back(Hex_Map[byte&0x0f]);
+				ret.push_back(Hex_unordered_mapUpper[byte>>4]);
+				ret.push_back(Hex_unordered_mapUpper[byte&0x0f]);
 			}
 			return ret;
 		}
 
 		string Base64(const void * data, size_t size) {
-			constexpr char map[] =
+			constexpr char unordered_map[] =
 				"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 				"abcdefghijklmnopqrstuvwxyz"
 				"0123456789+/";
@@ -394,10 +395,10 @@ namespace PVX {
 				unsigned int tmp = ((unsigned char*)data)[i] << 16;
 				tmp |= ((unsigned char*)data)[i + 1] << 8;
 				tmp |= ((unsigned char*)data)[i + 2];
-				out[0] = map[(tmp >> 18) & 0x3f];
-				out[1] = map[(tmp >> 12) & 0x3f];
-				out[2] = map[(tmp >> 6) & 0x3f];
-				out[3] = map[tmp & 0x3f];
+				out[0] = unordered_map[(tmp >> 18) & 0x3f];
+				out[1] = unordered_map[(tmp >> 12) & 0x3f];
+				out[2] = unordered_map[(tmp >> 6) & 0x3f];
+				out[3] = unordered_map[tmp & 0x3f];
 				out += 4;
 			}
 			if (padding) {
@@ -407,9 +408,9 @@ namespace PVX {
 					tmp |= (*dt) << (16 - (k << 3));
 					dt++;
 				}
-				out[0] = map[(tmp >> 18) & 0x3f];
-				out[1] = map[(tmp >> 12) & 0x3f];
-				out[2] = map[(tmp >> 6) & 0x3f];
+				out[0] = unordered_map[(tmp >> 18) & 0x3f];
+				out[1] = unordered_map[(tmp >> 12) & 0x3f];
+				out[2] = unordered_map[(tmp >> 6) & 0x3f];
 				for (; k < 3; k++) {
 					out[k + 1] = '=';
 				}
@@ -420,7 +421,7 @@ namespace PVX {
 			return Base64(data.data(), data.size());
 		}
 		string Base64Url(const void* data, size_t size, bool NoPadding) {
-			constexpr char map[] =
+			constexpr char unordered_map[] =
 				"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 				"abcdefghijklmnopqrstuvwxyz"
 				"0123456789-_";
@@ -434,10 +435,10 @@ namespace PVX {
 				unsigned int tmp = ((unsigned char*)data)[i] << 16;
 				tmp |= ((unsigned char*)data)[i + 1] << 8;
 				tmp |= ((unsigned char*)data)[i + 2];
-				out[0] = map[(tmp >> 18) & 0x3f];
-				out[1] = map[(tmp >> 12) & 0x3f];
-				out[2] = map[(tmp >> 6) & 0x3f];
-				out[3] = map[tmp & 0x3f];
+				out[0] = unordered_map[(tmp >> 18) & 0x3f];
+				out[1] = unordered_map[(tmp >> 12) & 0x3f];
+				out[2] = unordered_map[(tmp >> 6) & 0x3f];
+				out[3] = unordered_map[tmp & 0x3f];
 				out += 4;
 			}
 			if (padding) {
@@ -447,9 +448,9 @@ namespace PVX {
 					tmp |= (*dt) << (16 - (k << 3));
 					dt++;
 				}
-				out[0] = map[(tmp >> 18) & 0x3f];
-				out[1] = map[(tmp >> 12) & 0x3f];
-				out[2] = map[(tmp >> 6) & 0x3f];
+				out[0] = unordered_map[(tmp >> 18) & 0x3f];
+				out[1] = unordered_map[(tmp >> 12) & 0x3f];
+				out[2] = unordered_map[(tmp >> 6) & 0x3f];
 				if (!NoPadding) {
 					for (; k < 3; k++) {
 						out[k + 1] = '=';
@@ -552,31 +553,31 @@ namespace PVX {
 			return UriEncode(UTF(s));
 		}
 
-		constexpr auto Windows1253_Greek_map = []() {
-			std::array<wchar_t, 65536> map{ 0 };
-			for (int i = 0; i < 65536; i++) map[i] = '?';
+		constexpr auto Windows1253_Greek_unordered_map = []() {
+			std::array<wchar_t, 65536> unordered_map{ 0 };
+			for (int i = 0; i < 65536; i++) unordered_map[i] = '?';
 			for (int i = 0; i < 256; i++)
-				map[Windows1253_lut[i]] = i;
-			return map;
+				unordered_map[Windows1253_lut[i]] = i;
+			return unordered_map;
 		}();
 
 		std::string Windows1253_Greek(const std::wstring & data) {
 			std::string ret;
 			ret.reserve(data.size());
 			for(auto c : data)
-				ret.push_back(Windows1253_Greek_map[c]);
+				ret.push_back(Windows1253_Greek_unordered_map[c]);
 			return ret;
 		}
 	}
 	namespace Decode {
 		constexpr std::array<unsigned char, 256> b64Url2decLut = [] {
 			std::array<unsigned char, 256> ret{ 0 };
-			const char * map =
+			const char * unordered_map =
 				"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 				"abcdefghijklmnopqrstuvwxyz"
 				"0123456789-_";
 			for (int i = 0; i<64;i++) {
-				ret[map[i]] = i;
+				ret[unordered_map[i]] = i;
 			}
 			return ret;
 		}();
@@ -801,11 +802,11 @@ namespace PVX {
 			return ret;
 		}
 		std::wstring Uri(const std::string & S) {
-			unsigned char map[256]{ 0 };
+			unsigned char unordered_map[256]{ 0 };
 			for (int i = 0; i < 10; i++) {
-				map['0' + i] = i;
-				map['a' + i] = i + 10;
-				map['A' + i] = i + 10;
+				unordered_map['0' + i] = i;
+				unordered_map['a' + i] = i + 10;
+				unordered_map['A' + i] = i + 10;
 			}
 			std::wstring ret;
 			unsigned char * tmp = new unsigned char[S.size()];
@@ -817,7 +818,7 @@ namespace PVX {
 					tmp[c++] = s[i];
 				else {
 					i++;
-					tmp[c++] = (map[s[i]] << 4) + map[s[i++ + 1]];
+					tmp[c++] = (unordered_map[s[i]] << 4) + unordered_map[s[i++ + 1]];
 				}
 			}
 			ret = UTF(tmp, c);
@@ -826,11 +827,11 @@ namespace PVX {
 		}
 
 		std::wstring Uri(const std::wstring & S) {
-			unsigned char map[256]{ 0 };
+			unsigned char unordered_map[256]{ 0 };
 			for (int i = 0; i < 10; i++) {
-				map['0' + i] = i;
-				map['a' + i] = i + 10;
-				map['A' + i] = i + 10;
+				unordered_map['0' + i] = i;
+				unordered_map['a' + i] = i + 10;
+				unordered_map['A' + i] = i + 10;
 			}
 			std::wstring ret;
 			unsigned char * tmp = new unsigned char[S.size()];
@@ -842,7 +843,7 @@ namespace PVX {
 					tmp[c++] = s[i];
 				else {
 					i++;
-					tmp[c++] = unsigned char((map[s[i]] << 4) + map[s[i++ + 1]]);
+					tmp[c++] = unsigned char((unordered_map[s[i]] << 4) + unordered_map[s[i++ + 1]]);
 				}
 			}
 			ret = UTF(tmp, c);
@@ -1019,14 +1020,14 @@ namespace PVX {
 			return ret;
 		}
 
-		constexpr auto HexMap2 = []() {
-			std::array<unsigned char, 256> map{ 0 };
-			for (int i = 0; i<10; i++) map['0' + i] = i;
+		constexpr auto Hexunordered_map2 = []() {
+			std::array<unsigned char, 256> unordered_map{ 0 };
+			for (int i = 0; i<10; i++) unordered_map['0' + i] = i;
 			for (int i = 0; i<6; i++) {
-				map['a' + i] = i + 10;
-				map['A' + i] = i + 10;
+				unordered_map['a' + i] = i + 10;
+				unordered_map['A' + i] = i + 10;
 			}
-			return map;
+			return unordered_map;
 		}();
 
 		std::vector<unsigned char> FromHex(const std::string_view& str) {
@@ -1034,7 +1035,7 @@ namespace PVX {
 			if (!(str.size()&1)) {
 				ret.reserve(str.size() / 2);
 				for (auto i = 0; i<str.size(); i += 2)
-					ret.push_back(HexMap2[str[i]<<4] | HexMap2[str[i]]);
+					ret.push_back((Hexunordered_map2[str[i]]<<4) | Hexunordered_map2[str[i + 1]]);
 			}
 			return ret;
 		}
@@ -1043,7 +1044,7 @@ namespace PVX {
 			if (!(str.size()&1)) {
 				ret.reserve(str.size() / 2);
 				for (auto i = 0; i<str.size(); i += 2)
-					ret.push_back(HexMap2[str[i]<<4] | HexMap2[str[i]]);
+					ret.push_back((Hexunordered_map2[str[i]]<<4) | Hexunordered_map2[str[i + 1]]);
 			}
 			return ret;
 		}
