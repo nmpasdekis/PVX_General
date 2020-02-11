@@ -103,6 +103,9 @@ namespace PVX {
 			Variant(const Variant& v) :Value{ v.Value }, Type{ v.Type }, BsonType{ v.BsonType } {
 				if (Type>=jsElementType::String) Value.String->refCount++;
 			}
+			Variant(Variant&& v) noexcept :Value{ v.Value }, Type{ v.Type }, BsonType{ v.BsonType } {
+				v.Type = PVX::JSON::jsElementType::Undefined;
+			}
 
 
 			bool& operator=(const bool v) { Release(); Type = jsElementType::Boolean; Value.Boolean = v; BsonType = BSON_Type::Boolean; return Value.Boolean; }
@@ -194,28 +197,34 @@ namespace PVX {
 			unsigned short Padding;
 
 			void Release() {
-				switch (Type) {
-					case PVX::JSON::jsElementType::String: if (!--Value.String->refCount)
-						delete Value.String;
-						break;
-					case PVX::JSON::jsElementType::Array: if (!--Value.Array->refCount)
-						delete Value.Array;
-						break;
-					case PVX::JSON::jsElementType::Object: if (!--Value.Object->refCount)
-						delete Value.Object;
-						break;
-					case PVX::JSON::jsElementType::Binary: if (!--Value.Object->refCount)
-						delete Value.Binary;
-						break;
+				if (Type!=PVX::JSON::jsElementType::Undefined) {
+					switch (Type) {
+						case PVX::JSON::jsElementType::String: if (!--Value.String->refCount)
+							delete Value.String;
+							break;
+						case PVX::JSON::jsElementType::Array: if (!--Value.Array->refCount)
+							delete Value.Array;
+							break;
+						case PVX::JSON::jsElementType::Object: if (!--Value.Object->refCount)
+							delete Value.Object;
+							break;
+						case PVX::JSON::jsElementType::Binary: if (!--Value.Object->refCount)
+							delete Value.Binary;
+							break;
+					}
+					Type = jsElementType::Undefined;
+					BsonType = BSON_Type::Undefined;
 				}
-				Type = jsElementType::Undefined;
-				BsonType = BSON_Type::Undefined;
 			}
+			friend class Item;
 		};
 
 		class Item {
 		public:
 			Item() {}
+			Item(const Item&) = default;
+			Item(Item&&) = default;
+
 			Item(const enum jsElementType& tp) : Value{ tp } {}
 			Item(const bool& v) : Value{ v } {}
 			Item(const int& v) : Value{ v } {}
@@ -305,6 +314,10 @@ namespace PVX {
 				return *this;
 			}
 
+			void AddProperty(std::wstring&& Name, Item&& Val) {
+				 Value.Object().insert({ std::forward<std::wstring>(Name), std::forward<Item>(Val) });
+			}
+
 			Item& operator[](const std::wstring&);
 			Item& operator[](const std::string&);
 			Item& operator[](int);
@@ -332,8 +345,8 @@ namespace PVX {
 			std::vector<std::wstring> Keys() const;
 			std::vector<PVX::JSON::Item> Values() const;
 
-			double NumberSafeDouble();
-			long long NumberSafeInteger();
+			double NumberSafeDouble() const;
+			long long NumberSafeInteger() const;
 			std::wstring GetString() const;
 
 			long long& Integer() { return Value.Integer(); };
@@ -348,8 +361,24 @@ namespace PVX {
 			std::vector<unsigned char> Data();
 			void Data(const std::vector<unsigned char>& d);
 
-			Item unordered_map(std::function<Item(const Item&)> Convert);
-			Item unordered_map2(std::function<Item(const Item&, int Index)> Convert);
+			template<typename T>
+			auto map_T(T clb) {
+				std::vector<decltype(clb(Item()))> ret;
+				ret.reserve(length());
+				for (auto& x : Value.Value.Array->Array) ret.push_back(clb(x));
+				return ret;
+			}
+			template<typename T>
+			std::vector<T> map2_T(std::function<T(size_t,const Item&)> clb) {
+				std::vector<T> ret;
+				ret.reserve(length());
+				size_t i = 0;
+				for (auto& x : Value.Value.Array->Array) ret.push_back(clb(i++, x));
+				return ret;
+			}
+
+			Item map(std::function<Item(const Item&)> Convert);
+			Item map2(std::function<Item(const Item&, int Index)> Convert);
 			void each(std::function<void(Item&)> Func);
 			void each(std::function<void(const Item&)> Func) const;
 			void each2(std::function<void(Item&, int Index)> Func);

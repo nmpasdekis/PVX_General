@@ -351,7 +351,7 @@ namespace PVX {
 			return ret;
 		}
 
-		double Item::NumberSafeDouble() {
+		double Item::NumberSafeDouble() const {
 			switch (Value.GetType()) {
 				case jsElementType::Float: return Value.Double();
 				case jsElementType::Integer: return (double)Value.Integer();
@@ -360,7 +360,7 @@ namespace PVX {
 			}
 		}
 
-		long long Item::NumberSafeInteger() {
+		long long Item::NumberSafeInteger() const {
 			switch (Value.GetType()) {
 				case jsElementType::Float: return (long long)Value.Double();
 				case jsElementType::Integer: return Value.Integer();
@@ -383,7 +383,7 @@ namespace PVX {
 			Value = PVX::Encode::ToString(PVX::Encode::Base64(d));
 		}
 
-		Item Item::unordered_map(std::function<Item(const Item&)> Convert) {
+		Item Item::map(std::function<Item(const Item&)> Convert) {
 			if (Value.GetType() == JSON::jsElementType::Array) {
 				Item ret = JSON::jsElementType::Array;
 				for (auto& i : Value.Array()) {
@@ -394,7 +394,7 @@ namespace PVX {
 			return jsElementType::Undefined;
 		}
 
-		Item Item::unordered_map2(std::function<Item(const Item&, int Index)> Convert) {
+		Item Item::map2(std::function<Item(const Item&, int Index)> Convert) {
 			if (Value.GetType() == JSON::jsElementType::Array) {
 				Item ret = JSON::jsElementType::Array;
 				int Index = 0;
@@ -487,7 +487,7 @@ namespace PVX {
 				case PVX::JSON::jsElementType::Boolean:
 					return (*this);
 				case PVX::JSON::jsElementType::Array:
-					return unordered_map([](auto x) { return x.DeepCopy(); });
+					return map([](auto x) { return x.DeepCopy(); });
 					break;
 				case PVX::JSON::jsElementType::Object: {
 					Item ret = Value.GetType();
@@ -635,33 +635,121 @@ namespace PVX {
 			return parse(d.data(), d.size());
 		}
 
-
 		struct jsonStack {
 			int op;
 			int Empty = 0;
 			PVX::JSON::Item val;
-			std::vector<jsonStack> Child;
-			jsonStack(int op, int empty, const PVX::JSON::Item&& val) : op{ op }, Empty{ empty }, val{ val }{}
+			jsonStack** Child = nullptr;
+			jsonStack* Parent = nullptr;
+
+
+			jsonStack() {
+				op = 321;
+			}
+			jsonStack(int op, int empty, PVX::JSON::Item&& val) : op{ op }, Empty{ empty }, val{ std::move(val) }{}
 			jsonStack(int op, char empty) : op{ op }, Empty{ empty }{}
-			jsonStack(int op) : op{ op } {
-				Child.reserve(2);
+			jsonStack(int op) : op{ op } {}
+			jsonStack(const jsonStack&) = delete;
+			jsonStack(jsonStack&& v) noexcept : op{ v.op }, Empty{ v.Empty }, val{ std::move(v.val) }, Child{ v.Child }{ v.Child = nullptr; }
+			~jsonStack() { Release(); }
+			void Release() {
+				if (Child) {
+					delete Child[0];
+					delete Child[1];
+					delete Child;
+				}
 			}
 		};
 
-		void MakeObject(Item& obj, jsonStack&& s) {
-			if (s.op == (char)Symbols::Colon) {
-				obj[s.Child[1].val.String()] = std::move(s.Child[0].val);
-			} else if (s.op == (char)Symbols::Comma) {
-				for (auto& c : s.Child)
-					MakeObject(obj, std::move(c));
+		void MakeObject(Item& obj, jsonStack* s) {
+			if (s->op == (char)Symbols::Colon) {
+				obj.AddProperty(std::move(s->Child[1]->val.String()), std::move(s->Child[0]->val));
+				//obj[std::move(s->Child[1]->val.String())] = std::move(s->Child[0]->val);
+				delete s->Child[0];
+				delete s->Child[1];
+				delete s->Child;
+				s->Child = nullptr;
+			} else if (s->op == (char)Symbols::Comma) {
+				MakeObject(obj, s->Child[0]);
+				MakeObject(obj, s->Child[1]);
 			} else obj = jsElementType::Undefined;
 		}
-		void MakeArray(Item& obj, jsonStack&& s) {
-			if (s.op == (char)Symbols::Comma) {
-				for (long long i = long long(s.Child.size()) - 1; i >= 0; i--)
-					MakeArray(obj, std::move(s.Child[i]));
-			} else obj.push(s.val);
+		void MakeArray(Item& obj, jsonStack* s) {
+			jsonStack* cur = s;
+			jsonStack* tmp = s;
+			if (s->op != (char)Symbols::Comma) { obj.push(s->val); return; }
+			cur = cur->Child[1];
+			cur->Parent = tmp;
+
+			while (cur!=s) {
+				while (cur->op == (char)Symbols::Comma) {
+					tmp = cur;
+					cur = cur->Child[1];
+					cur->Parent = tmp;
+				}
+				obj.push(std::move(cur->val));
+				if (cur == cur->Parent->Child[1]) {
+					tmp = cur->Parent;
+					delete tmp->Child[1];
+					tmp->Child[1] = nullptr;
+					cur = tmp->Child[0];
+					cur->Parent = tmp;
+					continue;
+				}
+				while (cur!=s && cur == cur->Parent->Child[0]) {
+					cur = cur->Parent;
+					delete cur->Child[0];
+					cur->Child[0] = nullptr;
+					delete cur->Child;
+					cur->Child = nullptr;
+				}
+				tmp = cur->Parent;
+				if (!tmp) return;
+				cur = tmp->Child[0];
+				cur->Parent = tmp;
+			}
+			//if (s->op == (char)Symbols::Comma) {
+			//	MakeArray(obj, std::move(s->Child[1]));
+			//	MakeArray(obj, std::move(s->Child[0]));
+
+			//	delete s->Child[0];
+			//	delete s->Child[1];
+			//	delete s->Child;
+			//	s->Child = nullptr;
+			//} 
+			//else {
+			//	obj.push(s->val);
+			//}
 		}
+
+		//struct jsonStack {
+		//	int op;
+		//	int Empty = 0;
+		//	PVX::JSON::Item val;
+		//	std::vector<jsonStack> Child;
+		//	jsonStack(int op, int empty, PVX::JSON::Item&& val) : op{ op }, Empty{ empty }, val{ std::move(val) }{}
+		//	jsonStack(int op, char empty) : op{ op }, Empty{ empty }{}
+		//	jsonStack(int op) : op{ op } {
+		//		Child.reserve(2);
+		//	}
+		//	jsonStack(const jsonStack&) = delete;
+		//	jsonStack(jsonStack&& v) = default;
+		//};
+
+		//void MakeObject(Item& obj, jsonStack&& s) {
+		//	if (s.op == (char)Symbols::Colon) {
+		//		obj[s.Child[1].val.String()] = std::move(s.Child[0].val);
+		//	} else if (s.op == (char)Symbols::Comma) {
+		//		for (auto& c : s.Child)
+		//			MakeObject(obj, std::move(c));
+		//	} else obj = jsElementType::Undefined;
+		//}
+		//void MakeArray(Item& obj, jsonStack&& s) {
+		//	if (s.op == (char)Symbols::Comma) {
+		//		for (long long i = long long(s.Child.size()) - 1; i >= 0; i--)
+		//			MakeArray(obj, std::move(s.Child[i]));
+		//	} else obj.push(s.val);
+		//}
 
 		static std::wstring RemoveStrings2(const std::wstring& txt, std::vector<std::wstring>& Strings) {
 			std::wstring ret;
@@ -792,7 +880,7 @@ namespace PVX {
 			std::vector<char> Stack;
 			Stack.reserve(tmp.size());
 			int ItemCount = 0;
-			int ints = 0, floats = 0, strings = 0, functions = 0;
+			int ints = 0, floats = 0, strings = 0;
 
 			for (auto& t : tmp) {
 				switch (t) {
@@ -867,10 +955,19 @@ namespace PVX {
 					case (wchar_t)Symbols::Colon:
 					case (wchar_t)Symbols::Comma: {
 						if (Stack2.size() >= 2) {
-							s.Child.emplace_back(std::move(Stack2.back()));
-							Stack2.pop_back();
-							s.Child.emplace_back(std::move(Stack2.back()));
-							Stack2.back() = s;
+							//s.Child.emplace_back(std::move(Stack2.back()));
+							//Stack2.pop_back();
+							//s.Child.emplace_back(std::move(Stack2.back()));
+							//Stack2.pop_back();
+
+							s.Child = new jsonStack*[2]{
+								new jsonStack(std::move(Stack2.back())),
+								new jsonStack(std::move(Stack2[Stack2.size()-2]))
+							};
+							Stack2.resize(Stack2.size()-2);
+
+							Stack2.emplace_back(std::move(s));
+							//Stack2.back() = std::move(s);
 							break;
 						}
 						return jsElementType::Undefined;
@@ -880,8 +977,12 @@ namespace PVX {
 							Stack2.emplace_back(std::move(s));
 							break;
 						} else if (Stack2.size()) {
-							MakeObject(s.val, std::move(Stack2.back()));
-							Stack2.back() = std::move(s);
+							//MakeObject(s.val, std::move(Stack2.back()));
+							MakeObject(s.val, &Stack2.back());
+
+							Stack2.pop_back();
+							Stack2.emplace_back(std::move(s));
+							//Stack2.back() = std::move(s);
 							break;
 						}
 						return jsElementType::Undefined;
@@ -891,8 +992,12 @@ namespace PVX {
 							Stack2.emplace_back(std::move(s));
 							break;
 						} else if (Stack2.size()) {
-							MakeArray(s.val, std::move(Stack2.back()));
-							Stack2.back() = std::move(s);
+							//MakeArray(s.val, std::move(Stack2.back()));
+							MakeArray(s.val, &Stack2.back());
+
+							Stack2.pop_back();
+							Stack2.emplace_back(std::move(s));
+							//Stack2.back() = std::move(s);
 							break;
 						}
 						return jsElementType::Undefined;
@@ -1009,10 +1114,19 @@ namespace PVX {
 					case (wchar_t)Symbols::Colon:
 					case (wchar_t)Symbols::Comma: {
 						if (Stack2.size() >= 2) {
-							s.Child.emplace_back(std::move(Stack2.back()));
-							Stack2.pop_back();
-							s.Child.emplace_back(std::move(Stack2.back()));
-							Stack2.back() = s;
+							//s.Child.emplace_back(std::move(Stack2.back()));
+							//Stack2.pop_back();
+							//s.Child.emplace_back(std::move(Stack2.back()));
+							//Stack2.pop_back();
+
+							s.Child = new jsonStack*[2]{
+								new jsonStack(std::move(Stack2.back())),
+								new jsonStack(std::move(Stack2[Stack2.size()-2]))
+							};
+							Stack2.resize(Stack2.size()-2);
+
+							Stack2.emplace_back(std::move(s));
+							//Stack2.back() = s;
 							break;
 						}
 						return jsElementType::Undefined;
@@ -1022,8 +1136,12 @@ namespace PVX {
 							Stack2.emplace_back(std::move(s));
 							break;
 						} else if (Stack2.size()) {
-							MakeObject(s.val, std::move(Stack2.back()));
-							Stack2.back() = std::move(s);
+							//MakeObject(s.val, std::move(Stack2.back()));
+							MakeObject(s.val, &Stack2.back());
+
+							Stack2.pop_back();
+							Stack2.emplace_back(std::move(s));
+							//Stack2.back() = std::move(s);
 							break;
 						}
 						return jsElementType::Undefined;
@@ -1033,8 +1151,12 @@ namespace PVX {
 							Stack2.emplace_back(std::move(s));
 							break;
 						} else if (Stack2.size()) {
-							MakeArray(s.val, std::move(Stack2.back()));
-							Stack2.back() = std::move(s);
+							//MakeArray(s.val, std::move(Stack2.back()));
+							MakeArray(s.val, &Stack2.back());
+
+							Stack2.pop_back();
+							Stack2.emplace_back(std::move(s));
+							//Stack2.back() = std::move(s);
 							break;
 						}
 						return jsElementType::Undefined;
