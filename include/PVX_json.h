@@ -183,6 +183,9 @@ namespace PVX {
 			BSON_Type& Bson() { return BsonType; }
 			const BSON_Type& Bson() const { return BsonType; }
 		private:
+			BSON_Type BsonType;
+			jsElementType Type;
+			unsigned short Padding;
 			union {
 				bool Boolean;
 				long long Integer;
@@ -192,9 +195,6 @@ namespace PVX {
 				Variant_Object* Object;
 				Variant_BSON_Binary* Binary;
 			} Value;
-			jsElementType Type;
-			BSON_Type BsonType;
-			unsigned short Padding;
 
 			void Release() {
 				if (Type!=PVX::JSON::jsElementType::Undefined) {

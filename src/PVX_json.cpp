@@ -662,17 +662,70 @@ namespace PVX {
 		};
 
 		void MakeObject(Item& obj, jsonStack* s) {
+			jsonStack* cur = s;
+			jsonStack* tmp = s;
 			if (s->op == (char)Symbols::Colon) {
 				obj.AddProperty(std::move(s->Child[1]->val.String()), std::move(s->Child[0]->val));
-				//obj[std::move(s->Child[1]->val.String())] = std::move(s->Child[0]->val);
 				delete s->Child[0];
 				delete s->Child[1];
 				delete s->Child;
 				s->Child = nullptr;
-			} else if (s->op == (char)Symbols::Comma) {
-				MakeObject(obj, s->Child[0]);
-				MakeObject(obj, s->Child[1]);
-			} else obj = jsElementType::Undefined;
+				return; 
+			}
+			cur = cur->Child[1];
+			cur->Parent = tmp;
+
+			while (cur!=s) {
+				while (cur->op == (char)Symbols::Comma) {
+					tmp = cur;
+					cur = cur->Child[1];
+					cur->Parent = tmp;
+				}
+				if (cur->op != (char)Symbols::Colon) {
+					obj = jsElementType::Undefined;
+					return;
+				}
+				obj.AddProperty(std::move(cur->Child[1]->val.String()), std::move(cur->Child[0]->val));
+				delete cur->Child[0];
+				delete cur->Child[1];
+				delete cur->Child;
+				cur->Child = nullptr;
+
+				if (cur == cur->Parent->Child[1]) {
+					tmp = cur->Parent;
+					delete tmp->Child[1];
+					tmp->Child[1] = nullptr;
+					cur = tmp->Child[0];
+					cur->Parent = tmp;
+					continue;
+				}
+				while (cur!=s && cur == cur->Parent->Child[0]) {
+					cur = cur->Parent;
+					delete cur->Child[0];
+					cur->Child[0] = nullptr;
+					delete cur->Child;
+					cur->Child = nullptr;
+				}
+				tmp = cur->Parent;
+				if (!tmp) return;
+				cur = tmp->Child[0];
+				cur->Parent = tmp;
+			}
+
+
+
+
+			//if (s->op == (char)Symbols::Colon) {
+			//	obj.AddProperty(std::move(s->Child[1]->val.String()), std::move(s->Child[0]->val));
+			//	//obj[std::move(s->Child[1]->val.String())] = std::move(s->Child[0]->val);
+			//	delete s->Child[0];
+			//	delete s->Child[1];
+			//	delete s->Child;
+			//	s->Child = nullptr;
+			//} else if (s->op == (char)Symbols::Comma) {
+			//	MakeObject(obj, s->Child[0]);
+			//	MakeObject(obj, s->Child[1]);
+			//} else obj = jsElementType::Undefined;
 		}
 		void MakeArray(Item& obj, jsonStack* s) {
 			jsonStack* cur = s;

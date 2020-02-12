@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <map>
+#include <unordered_map>
 #include <PVX_json.h>
 
 namespace PVX::XML {
@@ -13,7 +13,7 @@ namespace PVX::XML {
 		ElementType Type;
 		std::wstring Name;
 		std::wstring Text;
-		std::map<std::wstring, std::wstring> Attributes;
+		std::unordered_map<std::wstring, std::wstring> Attributes;
 		std::vector<Element> Child;
 	};
 	Element Parse(const std::wstring& Text, bool IsHtml = false);

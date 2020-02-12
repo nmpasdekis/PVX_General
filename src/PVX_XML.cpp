@@ -95,13 +95,13 @@ namespace PVX::XML {
 
 		while (cur < txt.size()) {
 			if (std::regex_search(txt.cbegin()+cur, txt.cend(), match, openTag, std::regex_constants::match_continuous)) {
-				std::map<std::wstring, std::wstring> attrs;
+				std::unordered_map<std::wstring, std::wstring> attrs;
 				if (match.size()>3) PVX::onMatch(match[3].str(), attribs, [&](const std::wsmatch& m) { attrs[m[1]] = m.size()>2 ? Strings[NextString++] : L""; });
 
 				tags.push_back({ PVX::XML::Element::ElementType::OpenTag, PVX::String::ToLower(match[1].str()), match[1].str(), attrs });
 				cur += match.str().size();
 			} else if (std::regex_search(txt.cbegin()+cur, txt.cend(), match, fullTag, std::regex_constants::match_continuous)) {
-				std::map<std::wstring, std::wstring> attrs;
+				std::unordered_map<std::wstring, std::wstring> attrs;
 				if (match.size()>3) PVX::onMatch(match[3].str(), attribs, [&](const std::wsmatch& m) { attrs[m[1]] = m.size()>2 ? Strings[NextString++] : L""; });
 
 				tags.push_back({ PVX::XML::Element::ElementType::Tag, PVX::String::ToLower(match[1].str()), match[1].str(), attrs });
@@ -219,13 +219,14 @@ namespace PVX::XML {
 			case Element::ElementType::HtmlSingle: {
 				ret[L"Name"] = xml.Text;
 				if (xml.Attributes.size()) {
-					ret[L"Attributes"] = [&xml] {
-						std::unordered_map<std::wstring, std::wstring> ret;
-						for(auto& [n, v] : xml.Attributes) {
-							ret[n] = v;
-						}
-						return ret;
-					}();
+					ret[L"Attributes"] = xml.Attributes;
+					//ret[L"Attributes"] = [&xml] {
+					//	std::unordered_map<std::wstring, std::wstring> ret;
+					//	for (auto& [n, v] : xml.Attributes) {
+					//		ret[n] = v;
+					//	}
+					//	return ret;
+					//}();
 				}
 				if (xml.Child.size()) {
 					auto& Children = ret["Children"];
@@ -241,7 +242,7 @@ namespace PVX::XML {
 		}
 		return ret;
 	}
-	static const std::map<std::wstring, Element::ElementType> FromJsonType{
+	static const std::unordered_map<std::wstring, Element::ElementType> FromJsonType{
 		{ L"Tag", Element::ElementType::Tag },
 		{ L"Text", Element::ElementType::Text },
 		{ L"CDATA", Element::ElementType::CDATA },
